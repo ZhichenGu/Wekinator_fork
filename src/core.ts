@@ -5,15 +5,15 @@ export type FeatureMode = 'shape' | 'path' | 'both';
 export type Point = { x: number; y: number; z?: number; visibility?: number };
 export type Frame = { t: number; points: Point[]; shape: number[]; root: [number, number]; scale: number };
 export const MAX_SAMPLES_PER_ACTION = 100;
-export type Sample = { id: string; frames: Frame[]; duration: number; negative: boolean; aspectRatio?: number };
+export type Sample = { id: string; frames: Frame[]; duration: number; negative: boolean; split?: 'train'|'test'; aspectRatio?: number };
 export type Action = { id: string; name: string; effect: 'indicator' | 'serial' | 'mqtt'; serial?: SerialMessage; mqtt?: MqttMessage; color: string; samples: Sample[]; trained: boolean; threshold: number };
-export type Project = { schemaVersion: 1; name: string; mode: Mode; feature: FeatureMode; actions: Action[]; mqtt?: BrokerConfig; serialBaudRate?: number; recordingDuration?: number; updatedAt: string };
+export type Project = { schemaVersion: 1; name: string; mode: Mode; feature: FeatureMode; learning?: 'dynamic'|'pose'; poseHoldSeconds?: number; actions: Action[]; mqtt?: BrokerConfig; serialBaudRate?: number; recordingDuration?: number; updatedAt: string };
 export type Template = { actionId: string; duration: number; sequence: number[][]; energy: number; negative: boolean };
 
 export function appendSample(action: Action, sample: Sample): Action {
   if(action.samples.length>=MAX_SAMPLES_PER_ACTION)throw new Error(`每个动作最多保留 ${MAX_SAMPLES_PER_ACTION} 次录制，请先删除不需要的录制。`);
   if(action.samples.some(s=>s.id===sample.id))throw new Error('这次录制已经存在。');
-  return {...action,samples:[...action.samples,sample],trained:false};
+  return {...action,samples:[...action.samples,sample],trained:sample.split==='test'?action.trained:false};
 }
 
 const dist = (a: number[], b: number[]) => Math.sqrt(a.reduce((s, v, i) => s + (v - b[i]) ** 2, 0) / a.length);
@@ -89,7 +89,7 @@ export function dtw(a: number[][], b: number[][]): number {
 
 export function buildTemplates(actions: Action[], feature: FeatureMode): Template[] {
   const seen=new Set<string>();
-  return actions.flatMap(a => !a.trained ? [] : a.samples.map(s => {
+  return actions.flatMap(a => !a.trained ? [] : a.samples.filter(s=>s.split!=='test').map(s => {
     const seq = sequence(s.frames, feature);
     return {actionId:a.id, duration:s.duration, sequence:seq, energy:energy(seq), negative:s.negative};
   }).filter(t => {if(!t.sequence.length||t.energy<.025)return false;const key=JSON.stringify([t.actionId,t.negative,t.duration,t.sequence]);if(seen.has(key))return false;seen.add(key);return true;}));
@@ -146,6 +146,9 @@ export class TriggerGate {
 export function validateProject(data: unknown): Project {
   const p = data as Project;
   if (!p || p.schemaVersion!==1 || typeof p.name!=='string' || !p.name.trim() || p.name.length>80 || !['hand','face','pose'].includes(p.mode) || !['shape','path','both'].includes(p.feature) || !Array.isArray(p.actions) || p.actions.length>12) throw new Error('不是支持的项目文件，或项目版本不兼容。');
+  if(p.learning!==undefined&&!['dynamic','pose'].includes(p.learning))throw new Error('不支持的学习方式。');
+  if(p.poseHoldSeconds!==undefined&&(!Number.isFinite(p.poseHoldSeconds)||p.poseHoldSeconds<.1||p.poseHoldSeconds>3))throw new Error('姿态确认时间无效。');
+  if(p.learning==='pose')p.feature='shape';
   if(p.recordingDuration!==undefined&&(!Number.isFinite(p.recordingDuration)||p.recordingDuration<1||p.recordingDuration>6))throw new Error('录制时长无效。');
   if(p.serialBaudRate!==undefined&&!BAUD_RATES.includes(p.serialBaudRate))throw new Error('串口波特率无效。');
   if(p.mqtt!==undefined){if(!p.mqtt||typeof p.mqtt.url!=='string'||typeof p.mqtt.username!=='string'||typeof p.mqtt.clientId!=='string'||typeof p.mqtt.passwordRequired!=='boolean')throw new Error('MQTT 连接配置无效。');p.mqtt=validateBroker(p.mqtt);}
@@ -156,9 +159,11 @@ export function validateProject(data: unknown): Project {
     if(['scene','pulse'].includes(a.effect))a.effect='indicator';
     if(a.mqtt!==undefined)validateMqttMessage(a.mqtt);
     ids.add(a.id);
-    let dimension: number | null = null;
+    let dimension: number | null = null;const sampleIds=new Set<string>();
     for (const s of a.samples) {
       if (!s || typeof s.id!=='string' || typeof s.negative!=='boolean' || !Number.isFinite(s.duration) || s.duration<500 || s.duration>7000 || !Array.isArray(s.frames) || s.frames.length<5 || s.frames.length>300) throw new Error('示例长度无效。');
+      if(sampleIds.has(s.id))throw new Error('录制 ID 重复。');sampleIds.add(s.id);
+      if(s.split!==undefined&&!['train','test'].includes(s.split))throw new Error('录制用途无效。');
       if(s.aspectRatio!==undefined&&(!Number.isFinite(s.aspectRatio)||s.aspectRatio<.1||s.aspectRatio>10))throw new Error('示例画面比例无效。');
       for (const [i,f] of s.frames.entries()) {
         if (!f || !Number.isFinite(f.t) || (i>0 && f.t<=s.frames[i-1].t) || !Array.isArray(f.shape) || f.shape.length<2 || f.shape.length>200 || f.shape.some(v=>!Number.isFinite(v)) || !Array.isArray(f.root) || f.root.length!==2 || f.root.some(v=>!Number.isFinite(v)) || !Number.isFinite(f.scale) || f.scale<.015 || !Array.isArray(f.points) || f.points.length>500 || f.points.some(pt=>!pt || !Number.isFinite(pt.x) || !Number.isFinite(pt.y))) throw new Error('示例包含无效坐标或时间戳。');
