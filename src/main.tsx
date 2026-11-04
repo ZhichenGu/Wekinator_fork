@@ -1,0 +1,238 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import { Camera, Hand, ScanFace, PersonStanding, Plus, Play, Square, Circle, ArrowRight, ArrowLeft, Download, FolderOpen, Check, Layers, Sparkles, Settings2, Trash2, Video, X, ChevronRight, RotateCcw, Activity, AlertCircle } from 'lucide-react';
+import { appendSample, MAX_SAMPLES_PER_ACTION, buildTemplates, energy, extract, match, sequence, TriggerGate, validateProject, type Action, type Frame, type Mode, type Project, type Sample } from './core';
+import { deleteProject, loadProject, saveProject } from './storage';
+import { containBox } from './preview';
+import { SerialPanel, useSerialOutput } from './SerialPanel';
+import { DEFAULT_MESSAGE } from './serial';
+import { ConfirmDelete } from './ConfirmDelete';
+import { DecimalInput } from './DecimalInput';
+import './style.css';
+
+const MODES = {
+  hand: {name:'手部追踪',icon:Hand,description:'追踪手指关节与整只手的运动。适合捏合、展开手指、画圈等动作。',hint:'将一只手完整放入画面，保持手指清晰可见。'},
+  face: {name:'面部追踪',icon:ScanFace,description:'追踪面部关键点与表情变化。适合张嘴、眨眼与连续表情。',hint:'正对摄像头，保持面部完整可见，避免过暗的环境。'},
+  pose: {name:'身体追踪',icon:PersonStanding,description:'追踪身体关节与运动轨迹。适合抬手、伸展与全身动作。',hint:'后退一些，让肩、髋、手腕和脚踝都进入画面。'},
+};
+const COLORS=['#dddddd','#bcbcbc','#969696','#737373','#474747'];
+const uid=()=>crypto.randomUUID();
+const makeAction=(index=0,existing:string[]=[]):Action=>{while(existing.includes(`动作 ${String.fromCharCode(65+index)}`))index++;return ({id:uid(),name:`动作 ${String.fromCharCode(65+index)}`,effect:'pulse',color:COLORS[index%COLORS.length],samples:[],trained:false,threshold:.8});};
+const edges = (mode:Mode):number[][] => mode==='hand' ? [[0,1,2,3,4],[0,5,6,7,8],[5,9,10,11,12],[9,13,14,15,16],[13,17,18,19,20],[0,17]] : mode==='pose' ? [[11,12,24,23,11],[11,13,15],[12,14,16],[23,25,27],[24,26,28]] : [[33,133],[263,362],[61,13,291,14,61],[1,4],[10,152]];
+function Skeleton({frame,mode}:{frame:Frame|null;mode:Mode}) {
+  if (!frame) return null;
+  return <svg className="skeleton" viewBox="0 0 1000 750" preserveAspectRatio="none" aria-label="检测骨骼叠加层">
+    {edges(mode).map((ids,i)=><polyline key={i} points={ids.filter(id=>frame.points[id]).map(id=>`${frame.points[id].x*1000},${frame.points[id].y*750}`).join(' ')} fill="none" stroke="#e6e6e6" strokeWidth="3"/>)}
+    {frame.points.filter((_,i)=>mode!=='face'||[1,4,33,133,263,362,61,291,13,14,152,10].includes(i)).map((p,i)=><circle key={i} cx={p.x*1000} cy={p.y*750} r={mode==='face'?3:4} fill="#fff" stroke="#666666" strokeWidth="2"/>)}
+  </svg>;
+}
+function App() {
+  const [page,setPage]=useState<'home'|'create'|'studio'>('home');
+  const [project,setProject]=useState<Project|null>(null);
+  const projectRef=useRef<Project|null>(null); projectRef.current=project;
+  const [recent,setRecent]=useState<Project|null>(null);
+  const [name,setName]=useState('我的第一个交互'); const [mode,setMode]=useState<Mode>('hand');
+  const [selected,setSelected]=useState('');
+  const [camera,setCamera]=useState<'off'|'loading'|'on'>('off');
+  const [frame,setFrame]=useState<Frame|null>(null); const [ms,setMs]=useState(0);
+  const [notice,setNotice]=useState(''); const [saved,setSaved]=useState('尚未保存');
+  const [recording,setRecording]=useState(false); const [countdown,setCountdown]=useState<number|null>(null);
+  const [recordProgress,setRecordProgress]=useState(0); const [duration,setDuration]=useState(3);
+  const [running,setRunning]=useState(false); const runningRef=useRef(false);
+  const [scores,setScores]=useState<Record<string,number>>({}); const [locked,setLocked]=useState(false);
+  const [tab,setTab]=useState<'samples'|'run'>('samples'); const [negative,setNegative]=useState(false);
+  const [replay,setReplay]=useState<Sample|null>(null); const [replayIndex,setReplayIndex]=useState(0);
+  const [logs,setLogs]=useState<{name:string;time:string;manual:boolean;result?:string}[]>([]);
+  const [effect,setEffect]=useState<{color:string;name:string;type:string;key:number}|null>(null);
+  const [fallback,setFallback]=useState(false);
+  const serial=useSerialOutput();
+  const [deletion,setDeletion]=useState<{kind:'project'|'action'|'sample';name:string;id?:string;actionId?:string}|null>(null);
+  const [deleting,setDeleting]=useState(false);
+  const saveTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
+  const stageRef=useRef<HTMLDivElement>(null);
+  const [stageSize,setStageSize]=useState({width:640,height:360});
+  const [sourceSize,setSourceSize]=useState({width:640,height:480});
+  const cameraBox=containBox(stageSize.width,stageSize.height,sourceSize.width,sourceSize.height);
+  useEffect(()=>{
+    if(page!=='studio'||!stageRef.current)return;
+    const observer=new ResizeObserver(entries=>{const r=entries[0].contentRect;setStageSize({width:r.width,height:r.height});});
+    observer.observe(stageRef.current);return ()=>observer.disconnect();
+  },[page]);
+  const videoRef=useRef<HTMLVideoElement>(null); const fileRef=useRef<HTMLInputElement>(null);
+  const workerRef=useRef<Worker|null>(null); const streamRef=useRef<MediaStream|null>(null);
+  const recordStopTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
+  const rafRef=useRef(0); const timerRef=useRef<ReturnType<typeof setInterval>|null>(null);
+  const generation=useRef(0); const busy=useRef(false); const gate=useRef(new TriggerGate());
+  const buffer=useRef<Frame[]>([]); const lastMatch=useRef(0); const lastValid=useRef(0); const smooth=useRef<Frame|null>(null);
+  const recorder=useRef<{target:string;negative:boolean;frames:Frame[];start:number;duration:number}|null>(null);
+  const mainDetector=useRef<{detect:(image:HTMLVideoElement,t:number)=>Frame|null;close:()=>void}|null>(null);
+  const action=project?.actions.find(a=>a.id===selected);
+  const templates=useRef<ReturnType<typeof buildTemplates>>([]);
+
+  useEffect(()=>{window.scrollTo(0,0);},[page]);
+  useEffect(()=>{loadProject().then(p=>{if(p)setRecent(validateProject(p));}).catch(()=>setNotice('本地存储暂不可用，仍可通过导出保存项目。'));return ()=>{generation.current++;streamRef.current?.getTracks().forEach(t=>t.stop());workerRef.current?.terminate();mainDetector.current?.close();cancelAnimationFrame(rafRef.current);if(timerRef.current)clearInterval(timerRef.current);if(recordStopTimer.current)clearTimeout(recordStopTimer.current);};},[]);
+  useEffect(()=>{
+    if(!project)return;
+    setSaved('保存中…');
+    const timer=setTimeout(()=>{saveProject(project).then(()=>{setSaved('已保存在此浏览器');setRecent(project);}).catch(()=>setSaved('本地保存失败，请导出项目'));},350);
+    saveTimer.current=timer;
+    return ()=>clearTimeout(timer);
+  },[project]);
+  function update(fn:(p:Project)=>Project) {setProject(p=>p?{...fn(p),updatedAt:new Date().toISOString()}:p);}
+  function changeDuration(value:number) {setDuration(value);update(p=>({...p,recordingDuration:value}));}
+  function editAction(fn:(a:Action)=>Action) {update(p=>({...p,actions:p.actions.map(a=>a.id===selected?fn(a):a)}));}
+  function stopRun() {runningRef.current=false;setRunning(false);setLocked(false);gate.current.reset();buffer.current=[];setScores({});}
+  function stopCamera() {
+    generation.current++;cancelAnimationFrame(rafRef.current);workerRef.current?.terminate();workerRef.current=null;
+    mainDetector.current?.close();mainDetector.current=null;streamRef.current?.getTracks().forEach(t=>t.stop());streamRef.current=null;
+    if(videoRef.current)videoRef.current.srcObject=null;
+    if(timerRef.current)clearInterval(timerRef.current);if(recordStopTimer.current)clearTimeout(recordStopTimer.current);
+    recorder.current=null;setRecording(false);setCountdown(null);setCamera('off');setFrame(null);smooth.current=null;busy.current=false;stopRun();
+  }
+  function enter(p:Project) {stopCamera();void serial.disconnect();setSourceSize({width:640,height:480});setDuration(p.recordingDuration??3);p={...p,actions:p.actions.map((a,i)=>({...a,color:['#bdf1c9','#bcd7ff','#f4c5af','#d5c6ff','#f3df9c'].includes(a.color)?COLORS[i%COLORS.length]:a.color}))};setProject(p);setSelected(p.actions[0]?.id??'');setMode(p.mode);setPage('studio');setNotice('');setLogs([]);setEffect(null);}
+  function recordEvent(a:Action,manual:boolean,result?:string) {setLogs(l=>[{name:a.name,time:new Date().toLocaleTimeString('zh-CN',{hour12:false}),manual,result},...l].slice(0,6));}
+  function execute(a:Action,manual=false) {
+    if(a.effect==='serial'){
+      void serial.send(a.serial??DEFAULT_MESSAGE).then(()=>recordEvent(a,manual,'串口已写入')).catch(e=>{setNotice(e instanceof Error?e.message:'串口发送失败。');recordEvent(a,manual,'串口未发送');});return;
+    }
+    setEffect({color:a.color,name:a.name,type:a.effect,key:Date.now()});recordEvent(a,manual);
+  }
+  function requestDelete(value:NonNullable<typeof deletion>) {stopRun();setDeletion(value);}
+  async function confirmDelete() {
+    if(!deletion)return;
+    if(deletion.kind==='project'){
+      setDeleting(true);if(saveTimer.current)clearTimeout(saveTimer.current);
+      const previous=projectRef.current;setProject(null);stopCamera();void serial.disconnect();
+      try{await deleteProject();setRecent(null);setPage('home');setDeletion(null);setNotice('项目已从本地移除，已导出的文件不受影响。');}
+      catch(e){setProject(previous);setNotice('删除失败：'+(e instanceof Error?e.message:String(e)));}
+      finally{setDeleting(false);}
+    }else if(deletion.kind==='action'){
+      const remaining=projectRef.current?.actions.filter(a=>a.id!==deletion.id)??[];
+      update(p=>({...p,actions:remaining}));if(selected===deletion.id)setSelected(remaining[0]?.id??'');setDeletion(null);setScores({});
+    }else{
+      update(p=>({...p,actions:p.actions.map(a=>a.id===deletion.actionId?{...a,trained:false,samples:a.samples.filter(s=>s.id!==deletion.id)}:a)}));setDeletion(null);
+    }
+  }
+  function receive(raw:Frame|null,inferenceMs:number) {
+    busy.current=false;setMs(Math.round(inferenceMs));
+    if(!raw){setFrame(null);smooth.current=null;if(performance.now()-lastValid.current>250){buffer.current=[];if(runningRef.current){setScores({});gate.current.update({},projectRef.current?.actions??[],performance.now());setLocked(gate.current.locked);}}return;}
+    lastValid.current=performance.now();
+    let f=raw;
+    const prev=smooth.current;
+    if(prev && raw.t-prev.t<220 && raw.shape.length===prev.shape.length) f={...raw,shape:raw.shape.map((v,i)=>prev.shape[i]*.25+v*.75)};
+    smooth.current=f;setFrame(f);
+    const rec=recorder.current;
+    if(rec && f.t>=rec.start) rec.frames.push(f);
+    if(runningRef.current && projectRef.current) {
+      buffer.current.push(f);buffer.current=buffer.current.filter(v=>f.t-v.t<10000);
+      if(f.t-lastMatch.current>=100){lastMatch.current=f.t;const next=match(buffer.current,templates.current,projectRef.current.feature);setScores(next);const id=gate.current.update(next,projectRef.current.actions,f.t);setLocked(gate.current.locked);if(id){const a=projectRef.current.actions.find(v=>v.id===id);if(a)execute(a);}}
+    }
+  }
+  async function startCamera() {
+    if(camera!=='off'||!project)return;
+    const gen=++generation.current;setCamera('loading');setNotice('');setFallback(false);
+    try {
+      const stream=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:640},height:{ideal:480},facingMode:'user'},audio:false});
+      if(gen!==generation.current){stream.getTracks().forEach(t=>t.stop());return;}
+      streamRef.current=stream;stream.getVideoTracks().forEach(track=>{track.onended=()=>{if(gen===generation.current){stopCamera();setNotice('摄像头连接已中断，请检查设备后重新开启。');}};});const video=videoRef.current!;video.srcObject=stream;await video.play();
+      const base=new URL(import.meta.env.BASE_URL,location.href).href;
+      const worker=new Worker(new URL('./vision.worker.ts',import.meta.url),{type:'module'});workerRef.current=worker;
+      try {await new Promise<void>((resolve,reject)=>{
+        const timeout=setTimeout(()=>reject(new Error('模型加载超时')),25000);
+        worker.onerror=()=>{clearTimeout(timeout);reject(new Error('Worker 初始化失败'));};
+        worker.onmessage=e=>{if(e.data.type==='ready'){clearTimeout(timeout);resolve();}if(e.data.type==='error'){clearTimeout(timeout);reject(new Error(e.data.message));}};
+        worker.postMessage({type:'init',mode:project.mode,base});
+      });}
+      catch {
+        worker.terminate();workerRef.current=null;
+        // Some browsers cannot load MediaPipe's WASM loader in a module Worker.
+        // Keep a throttled main-thread fallback instead of leaving the camera unusable.
+        const mp=await import('@mediapipe/tasks-vision');const files=await mp.FilesetResolver.forVisionTasks(base+'wasm');
+        const opts={baseOptions:{modelAssetPath:base+'models/'+project.mode+'.task',delegate:'CPU' as const},runningMode:'VIDEO' as const};
+        if(project.mode==='hand'){const d=await mp.HandLandmarker.createFromOptions(files,{...opts,numHands:1});mainDetector.current={detect:(v,t)=>extract('hand',d.detectForVideo(v,t).landmarks[0]??[],[],t),close:()=>d.close()};}
+        if(project.mode==='pose'){const d=await mp.PoseLandmarker.createFromOptions(files,{...opts,numPoses:1});mainDetector.current={detect:(v,t)=>extract('pose',d.detectForVideo(v,t).landmarks[0]??[],[],t),close:()=>d.close()};}
+        if(project.mode==='face'){const d=await mp.FaceLandmarker.createFromOptions(files,{...opts,numFaces:1,outputFaceBlendshapes:true});mainDetector.current={detect:(v,t)=>{const r=d.detectForVideo(v,t);return extract('face',r.faceLandmarks[0]??[],r.faceBlendshapes[0]?.categories.map(c=>c.score)??[],t);},close:()=>d.close()};}
+        setFallback(true);
+      }
+      if(gen!==generation.current){worker.terminate();mainDetector.current?.close();mainDetector.current=null;return;}
+      if(workerRef.current){worker.onmessage=e=>{if(gen!==generation.current)return;if(e.data.type==='result')receive(e.data.frame,e.data.ms);if(e.data.type==='error'){setNotice('检测失败：'+e.data.message);stopCamera();}};worker.onerror=()=>{setNotice('检测线程异常，请重新开启摄像头。');stopCamera();};}
+      setCamera('on');let last=0;
+      const loop=async(t:number)=>{
+        if(gen!==generation.current)return;
+        rafRef.current=requestAnimationFrame(loop);
+        if(t-last<(mainDetector.current?85:65)||busy.current||video.readyState<2)return;
+        last=t;busy.current=true;
+        try {if(mainDetector.current){const begin=performance.now();receive(mainDetector.current.detect(video,t),performance.now()-begin);}else{const image=await createImageBitmap(video);if(gen!==generation.current){image.close();return;}workerRef.current?.postMessage({type:'frame',image,t},[image]);}}
+        catch(e){busy.current=false;setNotice('视频处理失败：'+(e instanceof Error?e.message:String(e)));stopCamera();}
+      };rafRef.current=requestAnimationFrame(loop);
+    }catch(e){if(gen!==generation.current)return;stopCamera();setNotice(e instanceof DOMException&&e.name==='NotAllowedError'?'摄像头权限未开启。请在浏览器的网站设置中允许摄像头，再重试。':'无法开启摄像头或模型：'+(e instanceof Error?e.message:String(e)));}
+  }
+  function finishRecording() {
+    const rec=recorder.current;recorder.current=null;setRecording(false);setCountdown(null);if(timerRef.current)clearInterval(timerRef.current);if(recordStopTimer.current)clearTimeout(recordStopTimer.current);
+    if(!rec)return;
+    const fs=rec.frames;
+    const actual=fs.length>1?fs.at(-1)!.t-fs[0].t:0;
+    if(fs.length<10||actual<rec.duration*.75||fs.some((f,i)=>i>0&&f.t-fs[i-1].t>220)){setNotice('这条示例的追踪不够连续，未保存。请保持目标完整可见，再录一次。');return;}
+    const first=fs[0].t;
+    const sample:Sample={id:uid(),frames:fs.map(f=>({...f,t:f.t-first})),duration:actual,negative:rec.negative,aspectRatio:sourceSize.width/sourceSize.height};
+    update(p=>({...p,actions:p.actions.map(a=>a.id===rec.target?appendSample(a,sample):a)}));
+    setNotice('已追加到当前动作。可以继续录制，完成后重新训练；原有录制已保留。');
+  }
+  function startRecording() {
+    if(!action||camera!=='on'||!frame||recording||countdown!==null)return;
+    stopRun();setNotice('');setCountdown(3);let count=3;const target=action.id,neg=negative,dur=duration*1000;
+    timerRef.current=setInterval(()=>{
+      count--;setCountdown(count);
+      if(count===0){clearInterval(timerRef.current!);setCountdown(null);setRecording(true);setRecordProgress(0);const start=performance.now();recorder.current={target,negative:neg,frames:[],start,duration:dur};
+        timerRef.current=setInterval(()=>setRecordProgress(Math.min(1,(performance.now()-start)/dur)),50);
+        recordStopTimer.current=setTimeout(finishRecording,dur);
+      }
+    },1000);
+  }
+  function train() {
+    if(!action||!project)return;
+    const valid=action.samples.filter(s=>!s.negative&&energy(sequence(s.frames,project.feature))>=.025);
+    if(!valid.length){setNotice('没有检测到足够变化的正例。请录制一段有明显变化的完整动作。');return;}
+    stopRun();editAction(a=>({...a,trained:true}));setNotice(`已构建 ${valid.length} 个动作模板。阈值尚未通过独立测试校准，请录制负例并在运行中验证。`);
+  }
+  function startRun() {
+    if(!project)return;
+    if(project.actions.some(a=>a.trained&&a.effect==='serial')&&serial.status!=='connected'){setNotice('有动作使用串口输出，请先连接串口，再开始运行。');return;}
+    const built=buildTemplates(project.actions,project.feature);
+    if(!built.some(t=>!t.negative)){setNotice('请先录制有明显变化的正例，并训练动作。');return;}
+    templates.current=built;buffer.current=[];gate.current.reset();lastMatch.current=0;setScores({});setLocked(false);runningRef.current=true;setRunning(true);setTab('run');setNotice('');
+  }
+  function exportProject() {if(!project)return;const url=URL.createObjectURL(new Blob([JSON.stringify(project)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=(project.name.replace(/[\\/:*?"<>|]/g,'_')||'映动项目')+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+  async function importFile(file?:File) {
+    if(!file)return;
+    try{if(file.size>256_000_000)throw new Error('项目文件不能超过 256 MB。');enter(validateProject(JSON.parse(await file.text())));}catch(e){setNotice(e instanceof Error?e.message:'无法读取项目文件。');}
+    if(fileRef.current)fileRef.current.value='';
+  }
+  const inProgress=recording||countdown!==null;
+  const positive=action?.samples.filter(s=>!s.negative).length??0;
+  const ready=project?.actions.some(a=>a.trained);
+  return <div className="app">
+    <input ref={fileRef} type="file" accept=".json,application/json" className="sr-only" onChange={e=>void importFile(e.target.files?.[0])}/>
+    <header className="topbar"><button className="brand" onClick={()=>{stopCamera();void serial.disconnect();setPage('home');}} aria-label="返回首页"><span className="brand-mark"><Activity size={21}/></span><strong>动作学习</strong></button><div className="top-right"><span className="local-badge"><span/>本地运行</span><span className="version">预览版 0.1</span></div></header>
+    {notice&&<div className="notice" role="status"><AlertCircle size={17}/><span>{notice}</span><button className="icon-button" onClick={()=>setNotice('')} aria-label="关闭提示"><X size={16}/></button></div>}
+    {page==='home'&&<main className="project-home">
+      <div className="home-title"><h1>项目</h1><div><button className="secondary" onClick={()=>fileRef.current?.click()}><FolderOpen size={17}/>打开项目</button><button className="primary" onClick={()=>setPage('create')}><Plus size={17}/>新建项目</button></div></div>
+      <section className="recent-projects"><h2>最近项目</h2>{recent?<div className="recent-project-row"><button className="recent-card" onClick={()=>enter(recent)}><div className="recent-icon"><Layers size={22}/></div><span><strong>{recent.name}</strong><small>{MODES[recent.mode].name} · {recent.actions.length} 个动作</small></span><ArrowRight size={18}/></button><button className="icon-button" title="删除项目" aria-label={`删除项目 ${recent.name}`} onClick={()=>requestDelete({kind:'project',name:recent.name})}><Trash2 size={17}/></button></div>:<p className="empty-projects">暂无本地项目</p>}</section>
+    </main>}
+    {page==='create'&&<main className="create-page"><button className="text-button" onClick={()=>setPage('home')}><ArrowLeft size={16}/>返回首页</button><div className="create-heading"><h1>新建项目</h1><p>选择检测方式。每个项目使用一种输入。</p></div><label className="project-name">项目名称<input maxLength={80} value={name} onChange={e=>setName(e.target.value)} placeholder="给你的交互起个名字"/></label><div className="mode-cards">{(Object.keys(MODES) as Mode[]).map(key=>{const item=MODES[key],Icon=item.icon;return <button key={key} className={'mode-card '+(mode===key?'chosen':'')} onClick={()=>setMode(key)}><div className="card-top"><span className="mode-icon"><Icon size={32} strokeWidth={1.5}/></span><span className="radio-circle">{mode===key&&<Check size={13}/>}</span></div><h2>{item.name}</h2><p>{item.description}</p><span className="mode-footer">本机模型<ChevronRight size={16}/></span></button>;})}</div><section className="method-box"><div className="method-icon"><Activity size={23}/></div><div><strong>动态动作匹配</strong><p>学习一段动作的变化过程，完成相近动作时触发效果。</p></div><span className="tag">首版可用</span></section><div className="future-methods"><span>其他学习方式</span><span>姿态分类 · 规划中</span><span>连续控制 · 规划中</span></div><div className="create-footer"><p>摄像头将在工作台中开启。</p><button className="primary" disabled={!name.trim()} onClick={()=>enter({schemaVersion:1,name:name.trim(),mode,feature:'both',actions:[makeAction()],updatedAt:new Date().toISOString()})}>进入工作台<ArrowRight size={18}/></button></div></main>}
+    {page==='studio'&&project&&<main className="studio"><div className="project-toolbar"><div><button className="text-button" onClick={()=>{stopCamera();void serial.disconnect();setPage('home');}}><ArrowLeft size={16}/>工作空间</button><span className="toolbar-divider"/><h1 title={project.name}>{project.name}</h1><span className="tag">{MODES[project.mode].name}</span></div><div className="toolbar-actions"><span className="save-state"><Check size={13}/>{saved}</span><button className="icon-button" title="删除当前项目" aria-label="删除当前项目" disabled={inProgress} onClick={()=>requestDelete({kind:'project',name:project.name})}><Trash2 size={16}/></button><button className="secondary small" disabled={inProgress} onClick={exportProject}><Download size={15}/>导出项目</button></div></div>
+      <div className="workflow"><span className="done-step"><b>1</b>选择输入</span><i/><span className={positive?'done-step':'active-step'}><b>2</b>录制示例</span><i/><span className={action?.trained?'done-step':positive?'active-step':''}><b>3</b>训练动作</span><i/><span className={running?'active-step':''}><b>4</b>运行交互</span></div>
+      <div className="workspace"><aside className="actions-panel"><div className="panel-title"><h2>我的动作</h2><span>{project.actions.length.toString().padStart(2,'0')}</span></div><p className="panel-help">选择动作以录制、训练或设置效果。</p><div className="action-list">{!project.actions.length&&<p className="no-actions">暂无动作，请点击“添加动作”。</p>}{project.actions.map((a,i)=><button disabled={inProgress} key={a.id} className={'action-item '+(selected===a.id?'selected':'')} onClick={()=>setSelected(a.id)}><span className="action-index">{(i+1).toString().padStart(2,'0')}</span><span className="action-item-copy"><strong>{a.name}</strong><small>{a.samples.filter(s=>!s.negative).length} 条示例 · {a.trained?'已训练':'待训练'}</small></span><span className={'status-dot '+(a.trained?'ready':'')}/></button>)}</div><button className="add-action" disabled={inProgress||project.actions.length>=12} onClick={()=>{stopRun();const a=makeAction(project.actions.length,project.actions.map(a=>a.name));update(p=>({...p,actions:[...p.actions,a]}));setSelected(a.id);}}><Plus size={16}/>添加动作</button><div className="aside-tip"><strong>录制建议</strong><p>在不同位置录制 3–5 次相同的完整动作。</p></div><div className="input-mode"><Camera size={17}/><span>摄像头输入<small>单人 · 本机处理</small></span></div></aside>
+      <section className="center-panel"><div className="camera-heading"><div><h2>实时画面</h2><span className={'camera-state '+(camera==='on'&&frame?'is-on':'')}><span/>{camera==='loading'?'正在加载模型':camera==='on'?frame?'追踪中':'等待目标进入画面':'摄像头未开启'}</span></div>{camera==='on'&&<button className="text-button" onClick={stopCamera}><Square size={13}/>关闭摄像头</button>}</div><div className="camera-view" ref={stageRef}><div className="camera-content" style={cameraBox}><video ref={videoRef} autoPlay playsInline muted onLoadedMetadata={e=>{const v=e.currentTarget;setSourceSize({width:v.videoWidth||640,height:v.videoHeight||480});}}/><Skeleton frame={frame} mode={project.mode}/></div>{camera!=='on'&&<div className="camera-placeholder"><div className="camera-symbol"><Video size={34} strokeWidth={1.3}/></div><h3>{camera==='loading'?'正在加载模型':'摄像头未开启'}</h3><p>{camera==='loading'?'首次加载可能需要几秒，请稍候。':MODES[project.mode].hint}</p><button className="primary" disabled={camera==='loading'} onClick={()=>void startCamera()}><Camera size={17}/>{camera==='loading'?'模型加载中…':'开启摄像头'}</button></div>}{camera==='on'&&<><div className="camera-hud"><span><span className="live-dot"/>LIVE</span><span>{ms} ms / 检测 {fallback?'· 兼容模式':''}</span></div><div className="camera-hint">{MODES[project.mode].hint}</div></>}{countdown!==null&&<div className="countdown">{countdown}<small>准备好你的动作</small></div>}{recording&&<div className="recording-banner"><span className="rec-dot"/>正在录制 {negative?'负例':'示例'}<span>{(recordProgress*duration).toFixed(2)} / {duration.toFixed(2)} s</span><div style={{width:recordProgress*100+'%'}}/></div>}</div>
+      <div className="capture-bar"><div><span className="section-kicker">{running?'实时匹配':'录制示例'}</span><p>{running?(locked?'已触发 · 等待动作退出后复位':frame?'等待完整动作':'追踪丢失 · 暂停触发'):!action?'先添加或选择一个动作。':action.samples.length>=MAX_SAMPLES_PER_ACTION?`已达到 ${MAX_SAMPLES_PER_ACTION} 次录制，请先删除不需要的录制。`:`录制将追加到“${action.name}”，已有 ${positive} 次正例录制。`}</p></div>{running?<button className="secondary" onClick={stopRun}><Square size={15}/>停止运行</button>:<button className={'record-button '+(recording?'is-recording':'')} disabled={!recording&&(camera!=='on'||!frame||countdown!==null||!action||action.samples.length>=MAX_SAMPLES_PER_ACTION)} onClick={recording?finishRecording:startRecording}>{recording?<Square size={16}/>:<Circle size={16} fill="currentColor"/>}{recording?'结束录制':countdown!==null?'准备录制…':positive?'追加录制':'录制示例'}</button>}</div>
+      <div className="tabs"><button className={tab==='samples'?'active':''} onClick={()=>setTab('samples')}>动作录制<span>{action?.samples.length??0}</span></button><button className={tab==='run'?'active':''} onClick={()=>setTab('run')}>运行反馈</button></div>
+      {tab==='samples'?<div className="samples-area">{!action?.samples.length?<div className="empty-samples"><Layers size={24} strokeWidth={1.4}/><div><strong>这里会保存你的动作示例</strong><p>开启摄像头后，点击“录制示例”。只保存骨骼数据，不保存视频。</p></div></div>:<div className="sample-list">{action.samples.map((s,i)=><div className="sample-row" key={s.id}><span className="sample-number">{(i+1).toString().padStart(2,'0')}</span><div><strong>第 {i+1} 次录制{s.negative?' · 负例':''}</strong><small>{(s.duration/1000).toFixed(2)} 秒 · {s.frames.length} 个采样点</small></div><div className="sample-wave" aria-hidden="true">{Array.from({length:25},(_,k)=><i key={k} style={{height:8+Math.min(24,Math.abs((s.frames[Math.min(s.frames.length-1,Math.floor(k*s.frames.length/25))]?.shape[3]??0))*15)}}/>)}</div><button className="icon-button" aria-label={`回放示例 ${i+1}`} onClick={()=>{setReplay(s);setReplayIndex(0);}}><Play size={15}/></button><button className="icon-button" disabled={inProgress||running} aria-label={`删除示例 ${i+1}`} onClick={()=>requestDelete({kind:'sample',name:`第 ${i+1} 次录制`,id:s.id,actionId:action.id})}><Trash2 size={15}/></button></div>)}</div>}</div>:<div className="run-area"><div className="match-list">{project.actions.map(a=><div className="match-row" key={a.id}><div><strong>{a.name}</strong><span>{a.trained?((scores[a.id]??0)*100).toFixed(2)+' / 100':'待训练'}</span></div><div className="meter"><i style={{width:(scores[a.id]??0)*100+'%'}}/><span style={{left:a.threshold*100+'%'}}/></div></div>)}<small>匹配程度用于比较动作相似性，不代表正确概率。</small></div><div className="event-log"><strong>最近触发</strong>{!logs.length?<p>完整动作匹配成功后，会在这里留下记录。</p>:logs.map((l,i)=><p key={i}><span>{l.time}</span>{l.name}<small>{l.result??(l.manual?'手动测试':'动作匹配')}</small></p>)}</div></div>}</section>
+      <aside className="settings-panel">{action&&<><div className="panel-title"><h2>动作设置</h2><button className="icon-button" title="删除当前动作" aria-label={`删除动作 ${action.name}`} disabled={inProgress} onClick={()=>requestDelete({kind:'action',name:action.name,id:action.id})}><Trash2 size={17}/></button></div><label className="field">动作名称<input maxLength={60} value={action.name} onBlur={()=>{if(!action.name.trim())editAction(a=>({...a,name:'未命名动作'}));}} disabled={inProgress||running} onChange={e=>editAction(a=>({...a,name:e.target.value}))}/></label><div className="setting-section"><div className="setting-heading"><span>学习方式</span><span className="tiny-tag">动态</span></div><strong className="setting-main">动态动作匹配</strong><p>比较一段完整动作的变化过程。允许一定速度差异。</p><label className="field compact">关注什么<select value={project.feature} disabled={inProgress||running} onChange={e=>{stopRun();update(p=>({...p,feature:e.target.value as Project['feature'],actions:p.actions.map(a=>({...a,trained:false}))}));}}><option value="both">形变 + 整体轨迹</option><option value="shape">只看局部形变</option><option value="path">只看整体轨迹</option></select></label></div><div className="setting-section"><div className="setting-heading"><span>录制时长（秒）</span><DecimalInput label="录制时长数值" disabled={inProgress||running} value={duration} min={1} max={6} onChange={changeDuration}/></div><input aria-label="录制时长" type="range" min="1" max="6" step=".01" value={duration} disabled={inProgress||running} onChange={e=>changeDuration(+e.target.value)}/><label className="checkbox-label"><input type="checkbox" checked={negative} disabled={inProgress||running} onChange={e=>setNegative(e.target.checked)}/>录制非目标动作（负例）</label><p>负例帮助排除容易混淆的动作。</p></div><div className="setting-section"><div className="setting-heading"><span>执行效果</span><Sparkles size={15}/></div><select aria-label="执行效果" value={action.effect} disabled={inProgress||running} onChange={e=>editAction(a=>({...a,effect:e.target.value as Action['effect']}))}><option value="pulse">播放扩散动画</option><option value="scene">切换效果画面</option><option value="serial">串口输出（Serial）</option></select>{action.effect==='serial'?<SerialPanel output={serial} message={action.serial} baudRate={project.serialBaudRate??9600} disabled={inProgress||running} onMessage={m=>editAction(a=>({...a,serial:m}))} onBaudRate={n=>update(p=>({...p,serialBaudRate:n}))} onTest={()=>execute(action,true)}/>:<><div className="color-options">{COLORS.map(c=><button key={c} aria-label={`选择颜色 ${c}`} aria-pressed={action.color===c} style={{background:c}} className={action.color===c?'picked':''} disabled={inProgress||running} onClick={()=>editAction(a=>({...a,color:c}))}>{action.color===c&&<Check size={12}/>}</button>)}<button className="text-button" onClick={()=>execute(action,true)}><Play size={12}/>测试效果</button></div><div className={'effect-preview '+(effect?.type==='pulse'?'pulse-effect':'')} style={{background:effect?.color??'#f0f0f0'}} key={effect?.key??'empty'}><div className="effect-orb"/><span>{effect?effect.name:'效果预览'}</span>{effect&&<small>{effect.type==='pulse'?'扩散动画':'场景已切换'}</small>}</div></>}</div><div className="setting-section"><div className="setting-heading"><span>触发阈值 / 100</span><DecimalInput label="触发阈值数值" disabled={inProgress||running} value={action.threshold*100} min={50} max={98} onChange={n=>editAction(a=>({...a,threshold:n/100}))}/></div><input aria-label="触发阈值" type="range" min=".5" max=".98" step=".0001" value={action.threshold} disabled={inProgress||running} onChange={e=>editAction(a=>({...a,threshold:+e.target.value}))}/><p>阈值越高，动作需要越接近示范。当前未做独立校准。</p></div></>}{!action&&<p className="no-actions">添加或选择一个动作后设置参数。</p>}</aside></div>
+      <footer className="studio-footer"><div className="footer-status"><span className={'status-dot '+(ready?'ready':'')}/><span>{inProgress?'正在采集动作，请保持目标清晰':running?'正在运行 · 完整匹配后触发一次':action?.trained?'动作模板已就绪，可以开始运行':positive?'已有示例，下一步训练动作':!action?'先添加动作':'先录制示例，再训练动作'}</span></div><div><button className="secondary" disabled={!positive||inProgress||running} onClick={train}><Layers size={16}/>{action?.trained?'重新训练':'训练动作'}</button><button className="primary" disabled={!ready||camera!=='on'||inProgress} onClick={running?stopRun:startRun}>{running?<Square size={16}/>:<Play size={16} fill="currentColor"/>}{running?'停止运行':'开始运行'}</button></div></footer>
+    </main>}
+    {replay&&project&&<div className="modal-backdrop"><section className="replay-modal" role="dialog" aria-modal="true" aria-label="骨骼示例回放"><header><div><h2>检查动作示例</h2><p>骨骼数据回放 · 不包含原始视频</p></div><button className="icon-button" aria-label="关闭回放" onClick={()=>setReplay(null)}><X size={20}/></button></header><div className="replay-stage" style={{aspectRatio:replay.aspectRatio??4/3}}><Skeleton frame={replay.frames[replayIndex]} mode={project.mode}/></div><div className="replay-controls"><RotateCcw size={17}/><input aria-label="回放时间轴" type="range" min="0" max={replay.frames.length-1} value={replayIndex} onChange={e=>setReplayIndex(+e.target.value)}/><span>{(replay.frames[replayIndex].t/1000).toFixed(2)} s</span></div><p className="modal-note">拖动时间轴检查起点、过程和终点。录得不完整时，删除后重新录制。</p></section></div>}
+
+    {deletion&&<ConfirmDelete title={`删除${deletion.kind==='project'?'项目':deletion.kind==='action'?'动作':'录制'}？`} description={`“${deletion.name}”${deletion.kind==='project'?'及其本地动作和示例将被移除。已导出的项目文件不受影响。':deletion.kind==='action'?'及其全部录制将被移除，其他动作会保留。':'将被移除，该动作需要重新训练。'}`} busy={deleting} onCancel={()=>setDeletion(null)} onConfirm={()=>void confirmDelete()}/>}
+  </div>;
+}
+createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);

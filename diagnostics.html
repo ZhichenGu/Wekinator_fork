@@ -1,0 +1,16 @@
+<!doctype html><html lang="zh-CN"><meta charset="UTF-8"><title>映动 · 本地模型冒烟测试</title><style>body{font:14px/1.8 system-ui;padding:36px;color:#284535}button{padding:12px 20px}pre{white-space:pre-wrap}canvas{display:none}</style><h1>本地模型冒烟测试</h1><p>仅验证三种本地模型能加载并处理空白帧；不访问摄像头，不代表真实识别效果。</p><button id="start">运行模型测试</button><pre id="log" role="status"></pre><canvas width="640" height="480"></canvas><script type="module">
+import {FilesetResolver,HandLandmarker,FaceLandmarker,PoseLandmarker} from '/node_modules/@mediapipe/tasks-vision/vision_bundle.mjs';
+const log=document.querySelector('#log'),button=document.querySelector('#start'),canvas=document.querySelector('canvas');
+button.onclick=async()=>{
+ button.disabled=true;log.textContent='开始本地 CPU 模型测试…\n';canvas.getContext('2d').fillRect(0,0,640,480);
+ try{
+  const files=await FilesetResolver.forVisionTasks('/wasm');
+  for(const [mode,Class] of [['hand',HandLandmarker],['face',FaceLandmarker],['pose',PoseLandmarker]]){
+   const before=performance.now();const model=await Class.createFromOptions(files,{baseOptions:{modelAssetPath:'/models/'+mode+'.task',delegate:'CPU'},runningMode:'VIDEO'});
+   const result=model.detectForVideo(canvas,performance.now());
+   log.textContent+=mode+': PASS · 本地模型已加载并完成空白帧推理 · '+Math.round(performance.now()-before)+' ms · 目标数 '+(result.landmarks?.length??result.faceLandmarks?.length??0)+'\n';model.close();
+  }
+  log.textContent+='全部通过。此结果不包含真实摄像头或真实动作验证。';
+ }catch(e){log.textContent+='FAIL: '+(e.message??String(e));}finally{button.disabled=false;}
+};
+</script></html>
