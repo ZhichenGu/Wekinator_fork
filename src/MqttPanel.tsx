@@ -6,7 +6,7 @@ export function useMqttOutput(){
   const [message,setMessage]=useState('');const [password,setPassword]=useState('');
   const [sending,setSending]=useState(false);
   useEffect(()=>()=>connection.current.disconnect(),[]);
-  const disconnect=useCallback(()=>{connection.current.disconnect();setState('idle');},[]);
+  const disconnect=useCallback(()=>{connection.current.disconnect();setState('idle');setMessage('MQTT 已断开。');},[]);
   const reset=useCallback(()=>{connection.current.disconnect();setState('idle');setPassword('');setMessage('');},[]);
   async function connect(config:BrokerConfig){
     setState('connecting');setMessage('');

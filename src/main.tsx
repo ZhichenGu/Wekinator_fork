@@ -117,9 +117,9 @@ function App() {
       finally{setDeleting(false);}
     }else if(deletion.kind==='action'){
       const remaining=projectRef.current?.actions.filter(a=>a.id!==deletion.id)??[];
-      update(p=>({...p,actions:remaining}));if(selected===deletion.id)setSelected(remaining[0]?.id??'');setDeletion(null);setScores({});
+      update(p=>({...p,actions:remaining}));if(selected===deletion.id)setSelected(remaining[0]?.id??'');setDeletion(null);setScores({});setNotice('动作已删除，其他动作已保留。');
     }else{
-      update(p=>({...p,actions:p.actions.map(a=>a.id===deletion.actionId?{...a,trained:false,samples:a.samples.filter(s=>s.id!==deletion.id)}:a)}));setDeletion(null);
+      update(p=>({...p,actions:p.actions.map(a=>a.id===deletion.actionId?{...a,trained:false,samples:a.samples.filter(s=>s.id!==deletion.id)}:a)}));setDeletion(null);setNotice('录制已删除，请重新训练当前动作。');
     }
   }
   function receive(raw:Frame|null,inferenceMs:number) {
