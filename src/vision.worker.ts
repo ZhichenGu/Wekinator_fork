@@ -30,7 +30,7 @@ self.onmessage = async (event: MessageEvent) => {
         points = result.faceLandmarks[0] ?? [];
         blend = result.faceBlendshapes[0]?.categories.map(c=>c.score) ?? [];
       }
-      self.postMessage({type:'result',frame:extract(mode,points,blend,data.t),ms:performance.now()-begin});
+      self.postMessage({type:'result',frame:extract(mode,points,blend,data.t),points,ms:performance.now()-begin});
     } catch (e) {self.postMessage({type:'error',message:e instanceof Error ? e.message : String(e)});}
     finally {image.close();}
   }

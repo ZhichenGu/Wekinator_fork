@@ -1,12 +1,12 @@
 {
   "name": "motion-studio",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build",
-    "test": "tsx --test src/*.test.ts && node --test server/*.test.mjs",
+    "test": "tsx --test src/*.test.ts src/*.test.tsx && node --test server/*.test.mjs",
     "start": "node server/start.mjs"
   },
   "dependencies": {
