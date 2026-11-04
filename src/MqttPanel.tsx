@@ -42,7 +42,7 @@ export function MqttPanel({output,config,value,actionId,disabled,onSave,onTest,o
     <div className="serial-buttons"><button className="secondary small" disabled={disabled||busy||!dirty} onClick={save}>保存配置</button><span className="config-state">{dirty?'有未保存修改':'配置已保存'}</span></div>
     <div className="serial-connection"><span className="connection-label"><i className={`connection-dot ${connected?'connected':output.state==='error'?'failed':''}`}/>{connected?'已连接':output.state==='connecting'?'正在连接':output.state==='error'?'连接异常':'未连接'}</span><button className="secondary small" disabled={disabled||busy||(!connected&&(dirty||!config||config.passwordRequired&&!output.password))} onClick={()=>connected?output.disconnect():config&&void output.connect(config)}>{connected?'断开':'连接'}</button></div>
     {config?.passwordRequired&&!output.password&&<p>请重新输入密码并保存配置。密码不会写入项目文件。</p>}
-    <button className="secondary small serial-test" disabled={disabled||busy||dirty||!connected} onClick={onTest}>测试发送</button>
+    <div className="serial-actions"><button className="secondary small serial-test" disabled={disabled||busy||dirty||!connected} onClick={onTest}>测试发送</button><a className="secondary small" href={`${import.meta.env.BASE_URL}examples/esp32s3_mqtt_led.ino`} download="esp32s3_mqtt_led.ino">案例代码下载</a></div><p>案例：ESP32-S3 · project/action · YES。Wi-Fi 和 MQTT 配置在 .ino 中填写。</p>
     <p>只在触发时发送，不发送保留消息；断线不自动补发。</p>
     {(error||output.message)&&<p role="status" className="serial-feedback">{error||output.message}</p>}
   </div>;
