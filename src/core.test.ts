@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildTemplates, dtw, match, sequence, TriggerGate, validateProject, type Action, type Frame, type Project } from './core';
 
-const action:Action={id:'a',name:'动作 A',effect:'pulse',color:'#bdf1c9',samples:[],trained:true,threshold:.8};
+const action:Action={id:'a',name:'动作 A',effect:'indicator',color:'#bdf1c9',samples:[],trained:true,threshold:.8};
 function motion(duration=3000, offset=0, scale=1, reverse=false):Frame[]{
   return Array.from({length:61},(_,i)=>{const t=i/60,u=reverse?1-t:t;return {t:t*duration,points:[],shape:[Math.sin(u*Math.PI),u],root:[offset+scale*(u*.2),offset+scale*(Math.sin(u*Math.PI)*.1)],scale:.1*scale};});
 }
@@ -62,4 +62,13 @@ test('project serial settings and preview aspect survive validation, invalid set
   assert.equal(validateProject(JSON.parse(JSON.stringify(project))).actions[0].serial?.text,'0');
   assert.throws(()=>validateProject({...project,serialBaudRate:42}));
   assert.throws(()=>validateProject({...project,actions:[{...project.actions[0],serial:{text:'1',lineEnding:'bad'}}]}));
+});
+
+test('copied recordings do not add duplicate templates or erase negative constraints',()=>{
+  const templates=buildTemplates([{...action,samples:[sample(motion()),{...sample(motion()),id:'copy'},sample(motion(),true)]}],'both');
+  assert.equal(templates.filter(t=>!t.negative).length,1);assert.equal(templates.filter(t=>t.negative).length,1);
+});
+test('old visual effects migrate to the default indicator output',()=>{
+  const p={schemaVersion:1,name:'旧项目',mode:'hand',feature:'both',updatedAt:'',actions:[{...action,effect:'pulse'}]};
+  assert.equal(validateProject(p).actions[0].effect,'indicator');
 });

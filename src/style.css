@@ -28,3 +28,13 @@
 @media(max-width:1000px){.settings-panel:has(.serial-panel){grid-template-columns:repeat(2,minmax(0,1fr))}.settings-panel:has(.serial-panel)>.setting-section:has(.serial-panel){grid-row:span 3}}
 @media(max-width:720px){.recent-project-row{gap:6px}.recent-card{padding:15px 12px;gap:10px}.recent-icon{flex-shrink:0}.settings-panel:has(.serial-panel){grid-template-columns:minmax(0,1fr)}.settings-panel:has(.serial-panel)>.setting-section{grid-column:1}.settings-panel:has(.serial-panel)>.setting-section:has(.serial-panel){grid-row:auto}.camera-view{height:360px}}
 .setting-heading input.decimal-input{width:88px;max-width:48%;padding:5px 7px;font-size:12px;font-variant-numeric:tabular-nums;background:#fff;border:1px solid #ccc;border-radius:4px;text-align:right}
+.trigger-feedback{display:flex;align-items:center;gap:10px;padding:16px 0 12px;font-size:12px;color:#555}
+.signal-light{display:inline-block;width:20px;height:20px;border-radius:50%;background:#bbb;border:1px solid #0002;flex-shrink:0}
+.signal-light.matched,.connection-dot.connected{background:#2e9951}
+.signal-light.waiting,.signal-light.failed,.connection-dot.failed{background:#cc4d4d}
+.connection-label{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#555}
+.connection-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#aaa;flex-shrink:0}
+.mqtt-panel .field{margin-top:13px}.mqtt-panel details{margin-top:12px;color:#666;font-size:11px}.mqtt-panel details input{margin-top:8px}.mqtt-panel summary{cursor:pointer}.mqtt-panel .serial-test{margin-top:13px;width:100%}.config-state{font-size:11px;color:#777}
+.mqtt-panel input{font-size:12px!important}.mqtt-panel .serial-feedback{padding:9px;border-left:2px solid #aaa;background:#f3f3f3;color:#555;overflow-wrap:anywhere}
+@media(max-width:1000px){.settings-panel:has(.mqtt-panel){grid-template-columns:repeat(2,minmax(0,1fr))}.settings-panel:has(.mqtt-panel)>.output-section{grid-row:span 3}}
+@media(max-width:720px){.settings-panel:has(.mqtt-panel){grid-template-columns:minmax(0,1fr)}.settings-panel:has(.mqtt-panel)>.setting-section{grid-column:1}.settings-panel:has(.mqtt-panel)>.output-section{grid-row:auto}}
