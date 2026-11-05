@@ -601,5 +601,9 @@
   "注册 / 获取 Key": "Sign up / Get key",
   "注册并登录后，在平台创建 API Key。": "Sign up or sign in, then create an API key on the platform.",
   "支持通过 Serial 向 Arduino 输出数据，或通过 MQTT 向 ESP32 输出数据。OSC 规划中。": "Output data to Arduino via Serial, or to ESP32 via MQTT. OSC is planned.",
-  "语音、声音事件与音量 · API": "Speech, sound events and volume · API"
+  "语音、声音事件与音量 · API": "Speech, sound events and volume · API",
+  "收起 API 配置": "Collapse API configuration",
+  "展开 API 配置": "Expand API configuration",
+  "收起检测目标": "Collapse detection target",
+  "展开检测目标": "Expand detection target"
 }

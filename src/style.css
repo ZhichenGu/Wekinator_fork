@@ -119,3 +119,39 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 .delete-dialog,.sample-editor{border-color:#e0e6ed;border-radius:16px}
 
 .output-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:8px;padding:4px;border-radius:12px;background:#edf2f8}.output-choices button{min-width:0;min-height:38px;padding:7px 3px;border:0;border-radius:9px;background:transparent;color:#52616e;font-size:12px;line-height:1.35;overflow-wrap:anywhere}.output-choices button:not(:disabled):hover{background:#e2eaf3;filter:none}.output-choices button.selected,.output-choices button.selected:not(:disabled):hover{background:#d4e5f8;color:#193e64;font-weight:600;filter:none}.output-choices button:focus-visible{outline:2px solid #4e7eb1;outline-offset:2px}
+
+/* Workspace rhythm: consistent top alignment, readable text and restrained corners. */
+.object-studio{padding:24px 28px 40px}
+.object-toolbar{align-items:center;gap:12px;margin-bottom:20px}
+.object-toolbar h1,.project-toolbar h1{font-size:18px;line-height:1.4}
+.object-tools{align-items:center}
+.object-grid{gap:18px;align-items:start}
+.object-config,.object-camera,.object-output{padding:20px;border-radius:12px}
+.object-grid h2,.panel-title h2,.camera-heading h2{font-size:16px;line-height:1.4;margin:0 0 16px}
+.object-camera-title h2{margin-bottom:16px}
+.object-camera-title{align-items:baseline;gap:12px}
+.object-grid .field{margin:16px 0;font-size:13px;line-height:1.5}
+.object-grid .field input,.object-grid .field select,.object-grid .field textarea{margin-top:7px}
+.object-grid .field input,.object-grid .field select{font-size:14px}
+.object-help,.object-log p,.serial-example-note{font-size:12px;line-height:1.65;color:#5f6368}
+.object-consent{font-size:12px;line-height:1.65}
+.object-buttons{align-items:center;gap:8px;margin:16px 0}
+.object-buttons button{min-height:36px}
+.object-config hr{margin:22px 0;border-color:#e8ebef}
+.object-result{align-items:center;gap:16px;margin-top:18px;padding:18px 0}
+.object-result strong{font-size:20px;line-height:1.35}
+.object-result p{font-size:12px;line-height:1.6}
+.object-log{margin-top:20px;padding-top:16px}
+.workspace{border-radius:12px}
+.actions-panel,.center-panel,.settings-panel{min-width:0}
+.actions-panel,.settings-panel{padding-top:20px}
+.camera-heading{align-items:baseline}
+.camera-heading h2,.panel-title h2{margin:0}
+.project-toolbar{align-items:center}
+.category-choice,.mode-card,.object-config,.object-camera,.object-output,.recent-card{border-radius:12px}
+.learning-options,.output-choices,.sample-editor,.delete-dialog{border-radius:10px}
+.primary,.secondary,input:not([type=checkbox]):not([type=range]),select,textarea,.output-choices button{border-radius:8px}
+@media(max-width:1000px){.settings-panel{padding:18px}.object-grid{gap:16px}}
+@media(max-width:720px){.object-studio{padding:18px}.object-config,.object-camera,.object-output{padding:16px}.object-grid h2{font-size:16px}.object-toolbar{align-items:flex-start}.camera-heading{align-items:flex-start}}
+
+.collapsible-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;margin-bottom:12px}.object-grid .collapsible-heading h2{margin:0;min-width:0}.collapse-toggle{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:36px;height:36px;padding:0;border:0;border-radius:8px;background:transparent;color:#5f6368}.collapse-toggle:hover{background:#e8eef7;filter:none}.collapse-toggle svg.collapsed{transform:rotate(-90deg)}
