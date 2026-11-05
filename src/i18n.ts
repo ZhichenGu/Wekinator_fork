@@ -7,7 +7,7 @@ try{if(typeof window!=='undefined')language=parseLanguage(document.cookie.match(
 const listeners=new Set<()=>void>();
 export function getLanguage(){return language;}
 export function subscribeLanguage(fn:()=>void){listeners.add(fn);return()=>{listeners.delete(fn);};}
-export function setLanguage(next:Language){language=parseLanguage(next);try{localStorage.setItem('motion-language',language);}catch{}if(typeof document!=='undefined'){document.documentElement.lang=language==='zh'?'zh-CN':'en';document.cookie=`ui_lang=${language}; Path=/; SameSite=Strict; Max-Age=31536000${location.protocol==='https:'?'; Secure':''}`;document.title=language==='zh'?'摄像头动作学习':'Camera motion learning';}for(const fn of listeners)fn();}
+export function setLanguage(next:Language){language=parseLanguage(next);try{localStorage.setItem('motion-language',language);}catch{}if(typeof document!=='undefined'){document.documentElement.lang=language==='zh'?'zh-CN':'en';document.cookie=`ui_lang=${language}; Path=/; SameSite=Strict; Max-Age=31536000${location.protocol==='https:'?'; Secure':''}`;document.title='Platform';}for(const fn of listeners)fn();}
 export function t(source:string,...values:unknown[]){const text=language==='en'?(dictionary[source]??source):source;return text.replace(/\{(\d+)\}/g,(_,n)=>String(values[+n]??`{${n}}`));}
 const patterns=Object.entries(dictionary).filter(([k])=>/\{\d+\}/.test(k)&&/[\u3400-\u9fff]/.test(k)).map(([key,value])=>{const parts=key.split(/(\{\d+\})/g);return {key,value,regex:new RegExp('^'+parts.map(p=>/^\{\d+\}$/.test(p)?'([\\s\\S]*?)':p.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('')+'$')};});
 // Called only for application messages, never for project names, target labels or payloads.
