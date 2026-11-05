@@ -563,5 +563,6 @@
   "连续数值输出；追踪丢失时不发送，停止后不补发。": "Continuous numeric output. Nothing is sent during tracking loss or replayed after stopping.",
   "数值示例已训练；请训练另一个不同数值的姿态，再开始运行。": "Value example trained. Train another pose with a different value before running.",
   "保持姿态录制，指定目标数值；换另一种姿态指定另一个数值。": "Record a held pose with a target value, then another pose with a different value.",
-  "连续": "Continuous"
+  "连续": "Continuous",
+  "支持通过 Serial 向 Arduino 输出数据，或通过 MQTT 向 ESP32 输出数据。OSC 输出规划中。": "Output data to Arduino via Serial, or to ESP32 via MQTT. OSC output is planned."
 }
