@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "users": [
+    {
+      "username": "admin",
+      "passwordHash": "scrypt-v1$1354a017ba59d9878e7b953a001989c0$f4051d8da931ddbdba167436ef98db68b1853a62719ed1de4e1d35b2fb83df1efd2c09658bc4d06ed2068fc55c311d07d42de893cfb52e5bb04be8144eddd99a",
+      "enabled": true,
+      "sessionVersion": "4ef1f2598e81ab70536ebad98b8933b7"
+    }
+  ]
+}

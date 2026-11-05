@@ -535,5 +535,8 @@
   "自动检测次数上限": "Automatic detection limit",
   "只统计实际发出的自动检测；失败或取消的请求也计入。验证 Key 与手动检测不计入本轮。重新开始会重置计数。": "Counts automatic detection attempts, including failed or cancelled requests. Key verification and manual checks are excluded. Starting a new run resets the count.",
   "本轮自动检测：{0} / {1} 次": "Automatic checks this run: {0} / {1}",
-  "录制不存在。": "Recording no longer exists."
+  "录制不存在。": "Recording no longer exists.",
+  "输入账号和密码后进入。": "Enter your username and password.",
+  "账号": "Username",
+  "账号或密码不正确。": "Incorrect username or password."
 }
