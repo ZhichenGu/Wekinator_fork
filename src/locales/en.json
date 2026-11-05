@@ -599,5 +599,7 @@
   "项目 01": "Project 01",
   "前往 {0} 注册或获取 API Key（新窗口）": "Open {0} to sign up or get an API key (new tab)",
   "注册 / 获取 Key": "Sign up / Get key",
-  "注册并登录后，在平台创建 API Key。": "Sign up or sign in, then create an API key on the platform."
+  "注册并登录后，在平台创建 API Key。": "Sign up or sign in, then create an API key on the platform.",
+  "支持通过 Serial 向 Arduino 输出数据，或通过 MQTT 向 ESP32 输出数据。OSC 规划中。": "Output data to Arduino via Serial, or to ESP32 via MQTT. OSC is planned.",
+  "语音、声音事件与音量 · API": "Speech, sound events and volume · API"
 }
