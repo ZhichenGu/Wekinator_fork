@@ -56,7 +56,7 @@ export function useSerialOutput() {
   return {supported:!!api,ports,selected,setSelected,status,feedback,error,refresh,choose,connect,disconnect,send};
 }
 export type SerialOutput = ReturnType<typeof useSerialOutput>;
-export function SerialPanel({presence=false,output,message,baudRate,disabled,onMessage,onBaudRate,onTest}:{presence?:boolean;output:SerialOutput;message?:SerialMessage;baudRate:number;disabled:boolean;onMessage:(m:SerialMessage)=>void;onBaudRate:(n:number)=>void;onTest:()=>void}) {
+export function SerialPanel({presence=false,continuous=false,output,message,baudRate,disabled,onMessage,onBaudRate,onTest}:{presence?:boolean;continuous?:boolean;output:SerialOutput;message?:SerialMessage;baudRate:number;disabled:boolean;onMessage:(m:SerialMessage)=>void;onBaudRate:(n:number)=>void;onTest:()=>void}) {
   const m=message??DEFAULT_MESSAGE;
   const connected=output.status==='connected'||output.status==='sending';
   const busy=output.status==='opening'||output.status==='closing'||output.status==='sending';
@@ -66,9 +66,9 @@ export function SerialPanel({presence=false,output,message,baudRate,disabled,onM
     <div className="serial-buttons"><button className="secondary small" disabled={!output.supported||connected||busy||disabled} onClick={()=>void output.choose()}>{t("选择设备")}</button><button className="text-button" disabled={!output.supported||busy||disabled} onClick={()=>void output.refresh()}>{t("刷新列表")}</button></div>
     <label className="field compact">{t("波特率")}<select aria-label={t("波特率")} value={baudRate} disabled={connected||busy||disabled} onChange={e=>onBaudRate(+e.target.value)}>{BAUD_RATES.map(n=><option value={n} key={n}>{n}</option>)}</select></label>
     <div className="serial-connection"><span className="serial-state connection-label"><i className={`connection-dot ${connected?'connected':output.error?'failed':''}`}/>{output.status==='opening'?t("正在连接"):output.status==='closing'?t("正在断开"):output.status==='sending'?t("正在发送"):connected?t("已连接"):t("未连接")}</span><button className="secondary small" disabled={!output.supported||busy||disabled||(!connected&&!output.selected)} onClick={()=>void(connected?output.disconnect():output.connect(baudRate))}>{connected?t("断开"):t("连接")}</button></div>
-    <label className="field compact">{presence?t("YES 时发送"):t("匹配成功时发送")}<input aria-label={t("串口发送内容")} maxLength={512} value={m.text} disabled={disabled} onChange={e=>onMessage({...m,text:e.target.value})} placeholder={t("例如 /success、1 或 YES")}/></label>
+    <label className="field compact">{continuous?t("数值消息（可使用 {value}）"):presence?t("YES 时发送"):t("匹配成功时发送")}<input aria-label={t("串口发送内容")} maxLength={512} value={m.text} disabled={disabled} onChange={e=>onMessage({...m,text:e.target.value})} placeholder={t("例如 /success、1 或 YES")}/></label>
     <label className="field compact">{t("结束符")}<select aria-label={t("串口结束符")} value={m.lineEnding} disabled={disabled} onChange={e=>onMessage({...m,lineEnding:e.target.value as SerialMessage['lineEnding']} )}><option value="none">{t("不追加")}</option><option value="lf">{t("换行 LF（\\n）")}</option><option value="crlf">{t("回车换行 CRLF（\\r\\n）")}</option></select></label>
-    <p>{presence?t("UTF-8 文本。确认结果首次出现或变化时发送；NO 可选择不发送。"):t("UTF-8 文本。每次确认只发送一次，未触发时不发送。")}</p>
+    <p>{continuous?t("连续数值输出；追踪丢失时不发送，停止后不补发。"):presence?t("UTF-8 文本。确认结果首次出现或变化时发送；NO 可选择不发送。"):t("UTF-8 文本。每次确认只发送一次，未触发时不发送。")}</p>
     <div className="serial-actions"><button className="secondary small serial-test" disabled={!connected||busy||disabled||!m.text.length} onClick={onTest}>{t("测试发送")}</button><a className="secondary small" href={`${import.meta.env.BASE_URL}examples/serial_success_led.ino`} download="serial_success_led.ino">{t("案例代码下载")}</a></div><p className="serial-example-note">{t("案例：115200 · /success · LF")}</p>
     {output.feedback&&<p className="serial-feedback" role="status">{messageT(output.feedback)}</p>}{output.error&&<p className="serial-warning" role="alert">{messageT(output.error)}</p>}
   </div>;

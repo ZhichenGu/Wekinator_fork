@@ -6,8 +6,8 @@ export type Point = { x: number; y: number; z?: number; visibility?: number };
 export type Frame = { t: number; points: Point[]; shape: number[]; root: [number, number]; scale: number };
 export const MAX_SAMPLES_PER_ACTION = 100;
 export type Sample = { id: string; frames: Frame[]; duration: number; negative: boolean; split?: 'train'|'test'; aspectRatio?: number };
-export type Action = { id: string; name: string; effect: 'indicator' | 'serial' | 'mqtt'; serial?: SerialMessage; mqtt?: MqttMessage; color: string; samples: Sample[]; trained: boolean; threshold: number };
-export type Project = { id?:string; schemaVersion: 1; name: string; mode: Mode; feature: FeatureMode; learning?: 'dynamic'|'pose'; poseHoldSeconds?: number; actions: Action[]; mqtt?: BrokerConfig; serialBaudRate?: number; recordingDuration?: number; updatedAt: string };
+export type Action = { id: string; name: string; effect: 'indicator' | 'serial' | 'mqtt'; serial?: SerialMessage; mqtt?: MqttMessage; color: string; samples: Sample[]; trained: boolean; threshold: number; controlValue?:number };
+export type Project = { id?:string; schemaVersion: 1; name: string; mode: Mode; feature: FeatureMode; learning?: 'dynamic'|'pose'|'continuous'; poseHoldSeconds?: number; actions: Action[]; mqtt?: BrokerConfig; serialBaudRate?: number; recordingDuration?: number; updatedAt: string };
 export type Template = { actionId: string; duration: number; sequence: number[][]; energy: number; negative: boolean };
 
 export function appendSample(action: Action, sample: Sample): Action {
@@ -147,15 +147,16 @@ export function validateProject(data: unknown): Project {
   const p = data as Project;
   if (!p || p.schemaVersion!==1 || typeof p.name!=='string' || !p.name.trim() || p.name.length>80 || !['hand','face','pose'].includes(p.mode) || !['shape','path','both'].includes(p.feature) || !Array.isArray(p.actions) || p.actions.length>12) throw new Error('不是支持的项目文件，或项目版本不兼容。');
   if(p.id!==undefined&&(typeof p.id!=='string'||!/^[-a-zA-Z0-9_]{1,100}$/.test(p.id)))throw new Error('项目标识无效。');
-  if(p.learning!==undefined&&!['dynamic','pose'].includes(p.learning))throw new Error('不支持的学习方式。');
+  if(p.learning!==undefined&&!['dynamic','pose','continuous'].includes(p.learning))throw new Error('不支持的学习方式。');
   if(p.poseHoldSeconds!==undefined&&(!Number.isFinite(p.poseHoldSeconds)||p.poseHoldSeconds<.1||p.poseHoldSeconds>3))throw new Error('姿态确认时间无效。');
-  if(p.learning==='pose')p.feature='shape';
+  if(p.learning==='pose'||p.learning==='continuous')p.feature='shape';
   if(p.recordingDuration!==undefined&&(!Number.isFinite(p.recordingDuration)||p.recordingDuration<1||p.recordingDuration>6))throw new Error('录制时长无效。');
   if(p.serialBaudRate!==undefined&&!BAUD_RATES.includes(p.serialBaudRate))throw new Error('串口波特率无效。');
   if(p.mqtt!==undefined){if(!p.mqtt||typeof p.mqtt.url!=='string'||typeof p.mqtt.username!=='string'||typeof p.mqtt.clientId!=='string'||typeof p.mqtt.passwordRequired!=='boolean')throw new Error('MQTT 连接配置无效。');p.mqtt=validateBroker(p.mqtt);}
   const ids = new Set<string>();
   for (const a of p.actions) {
     if (!a || typeof a.id!=='string' || ids.has(a.id) || typeof a.name!=='string' || !a.name.trim() || a.name.length>60 || !['indicator','serial','mqtt','scene','pulse'].includes(a.effect) || !/^#[0-9a-f]{6}$/i.test(a.color) || typeof a.trained!=='boolean' || !Number.isFinite(a.threshold) || a.threshold<.5 || a.threshold>.98 || !Array.isArray(a.samples) || a.samples.length>MAX_SAMPLES_PER_ACTION) throw new Error('动作数据不完整或超过限制。');
+    if(a.controlValue!==undefined&&(!Number.isFinite(a.controlValue)||a.controlValue<0||a.controlValue>1))throw new Error('目标数值须在 0 到 1 之间。');
     if(a.serial!==undefined&&(!a.serial||typeof a.serial.text!=='string'||a.serial.text.length>512||!['none','lf','crlf'].includes(a.serial.lineEnding)))throw new Error('串口发送配置无效。');
     if(['scene','pulse'].includes(a.effect))a.effect='indicator';
     if(a.mqtt!==undefined)validateMqttMessage(a.mqtt);

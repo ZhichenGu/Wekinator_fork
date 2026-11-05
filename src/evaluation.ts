@@ -9,6 +9,7 @@ export function sampleSignature(project:Project,sample:Sample):string{
   return JSON.stringify(seq.map(vector=>vector.map(v=>Math.round(v*1e6)/1e6)));
 }
 export function evaluateProject(project:Project,onProgress?:(done:number,total:number)=>void):EvaluationReport{
+ if(project.learning==='continuous')throw new Error('连续控制不使用分类式测试报告。');
   const names=new Map(project.actions.map(a=>[a.id,a.name]));
   const samples=project.actions.flatMap(a=>a.samples.filter(s=>s.split==='test').map(sample=>({action:a,sample})));
   if(!samples.length)throw new Error('还没有独立测试录制。请选择“独立测试”，重新录制后再检查。');
