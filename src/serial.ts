@@ -1,3 +1,4 @@
+import {t} from './i18n';
 export type LineEnding = 'none' | 'lf' | 'crlf';
 export type SerialMessage = { text: string; lineEnding: LineEnding };
 export const DEFAULT_MESSAGE: SerialMessage = { text: '/success', lineEnding: 'lf' };
@@ -21,7 +22,7 @@ export function encodeMessage(message: SerialMessage): Uint8Array {
 export function portLabel(port: DevicePort, index: number): string {
   const info = port.getInfo();
   const hex = (n: number) => n.toString(16).padStart(4,'0').toUpperCase();
-  return `串口 ${index + 1}` + (info.usbVendorId !== undefined ? ` · USB ${hex(info.usbVendorId)}:${hex(info.usbProductId ?? 0)}` : '');
+  return t('串口 {0}',index + 1) + (info.usbVendorId !== undefined ? ` · USB ${hex(info.usbVendorId)}:${hex(info.usbProductId ?? 0)}` : '');
 }
 /** One explicit connection; no automatic retries or deferred message queue. */
 export class SerialConnection {

@@ -52,3 +52,5 @@
 .object-studio>input.sr-only{display:none}
 
 .capture-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;flex-shrink:0}.capture-actions button{white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:6px}.capture-bar{flex-wrap:wrap}.capture-bar>div:first-child{min-width:0;flex:1 1 200px}@media(max-width:640px){.capture-actions{width:100%;justify-content:flex-start}.capture-actions button{flex:1;padding:8px;font-size:11px}}
+
+.language-switch{display:flex;align-items:center;gap:5px;border:1px solid #ddd;border-radius:5px;padding:3px 6px;background:#fff;color:#666;flex-shrink:0}.language-switch button{background:transparent;font-size:12px;padding:3px 4px;color:#777;white-space:nowrap}.language-switch button[aria-pressed=true]{color:#222;background:#eee;border-radius:3px;font-weight:600}.top-right{flex-wrap:wrap;justify-content:flex-end}.capture-actions button{white-space:normal}.topbar{gap:12px}.language-switch svg{flex-shrink:0}@media(max-width:640px){.topbar{height:auto;min-height:64px;flex-wrap:wrap;padding-top:10px;padding-bottom:10px}.top-right{gap:8px}.capture-actions button{min-width:90px}}

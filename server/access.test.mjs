@@ -27,3 +27,10 @@ test('repeated wrong passwords are throttled without exposing the password in th
     assert.equal((await fetch(url+'/auth/login',{method:'POST',body:'password=bad'})).status,429);
   }finally{server.closeAllConnections();await new Promise(r=>server.close(r));}
 });
+
+test('login language switch translates errors and labels without weakening access',async t=>{
+ const gate=createAccessGate({password:'0000',secret:'language-test'});const server=http.createServer((req,res)=>void gate(req,res,()=>{res.end('protected');}));server.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));t.after(()=>{server.closeAllConnections();server.close();});const base='http://127.0.0.1:'+server.address().port;
+ const page=await fetch(base+'/?lang=en');assert.match(page.headers.get('set-cookie'),/ui_lang=en/);const html=await page.text();assert.match(html,/Access verification/);assert.match(html,/lang="en"/);assert.match(html,/English/);
+ const bad=await fetch(base+'/auth/login?lang=en',{method:'POST',body:'password=bad',redirect:'manual'});assert.equal(bad.status,401);assert.match(await bad.text(),/Incorrect password/);
+ const asset=await fetch(base+'/assets/private.js?lang=en');assert.equal(asset.status,401);
+});
