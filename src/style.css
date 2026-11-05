@@ -64,3 +64,56 @@
 .create-title-row{display:flex;align-items:baseline;justify-content:flex-start;gap:16px}.create-title-row h1{flex-shrink:0}.create-heading .output-summary{margin:0;max-width:560px;font-size:11px;line-height:1.8;color:#666;overflow-wrap:anywhere}@media(max-width:720px){.create-title-row{align-items:flex-start;flex-direction:column;gap:10px}.create-heading .output-summary{max-width:100%}}
 
 .category-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:24px}.category-choice{display:flex;align-items:center;gap:12px;text-align:left;background:#fff;border:1px solid #d5d5d5;border-radius:7px;padding:18px;min-width:0;color:#333}.category-choice.chosen{border-color:#555;box-shadow:inset 0 0 0 1px #555}.category-choice>span{min-width:0}.category-choice strong,.category-choice small{display:block;overflow-wrap:anywhere}.category-choice small{font-size:11px;color:#777;margin-top:5px}.category-choice>svg{flex-shrink:0}.category-choice>.planned-label{margin-left:auto;flex-shrink:0}.choice-heading{font-size:13px;margin:24px 0 12px;color:#555}.tracking-choices{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:0}.category-details .learning-options{margin-top:0}.planned-label{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:#777;font-weight:400;white-space:nowrap}.learning-options .planned-choice{opacity:1;color:#777;background:#eef0f2;border-style:dashed;cursor:not-allowed}.planned-choice strong{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;width:100%}.planned-choice>span{color:#858585}.planned-note{font-size:12px;color:#777;margin-top:12px}.learning-options small{color:#666;font-size:11px}@media(max-width:720px){.category-options,.tracking-choices{grid-template-columns:minmax(0,1fr)}.category-choice{padding:14px}}
+
+/* Choice states: white, neutral hover and muted blue selection. */
+.create-choices .category-choice:not(.chosen),.create-choices .mode-card:not(.chosen),.create-choices .learning-options button:not(.chosen):not(:disabled){background:#fff}
+.create-choices .category-choice:not(:disabled):not(.chosen):hover,.create-choices .mode-card:not(:disabled):not(.chosen):hover,.create-choices .learning-options button:not(:disabled):not(.chosen):hover{background:#eef0f2;filter:none}
+.create-choices .category-choice.chosen,.create-choices .mode-card.chosen,.create-choices .learning-options button.chosen{background:#dbe7f2;border-color:#607d96;box-shadow:inset 0 0 0 1px #607d96}
+.create-choices button:focus-visible{outline:2px solid #376b9a;outline-offset:3px}
+
+/* Subtle outlines; selected choices use color instead of a heavy border. */
+.create-choices .category-choice,.create-choices .mode-card,.create-choices .learning-options button{border-color:rgba(52,64,74,.18);box-shadow:none}
+.create-choices .category-choice.chosen,.create-choices .mode-card.chosen,.create-choices .learning-options button.chosen{border-color:transparent;box-shadow:none}
+.api-key-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.api-key-heading a{display:inline-flex;align-items:center;gap:4px;color:#526c82;font-size:11px;text-decoration:none}.api-key-heading a:hover{text-decoration:underline}.api-key-heading a:focus-visible{outline:2px solid #376b9a;outline-offset:3px}.api-key-field .object-help{margin-top:6px}
+
+/* Calm, light surfaces with blue reserved for choices and primary actions. */
+:root{background:#f6f8fc;color:#1f1f1f}
+body,.app{background:#f6f8fc}
+.topbar{background:#f6f8fc;border-bottom:1px solid #e7ebf0}
+.brand-mark{border-color:#dce2e9;border-radius:10px;background:#fff}
+.language-switch{background:#fff;border-color:#e1e5eb;border-radius:10px;padding:4px 7px}
+.language-switch button[aria-pressed=true]{background:#e8eef7;border-radius:6px;color:#203a52}
+.version,.tag,.tiny-tag{border-color:#e0e5eb;border-radius:7px}
+.home-title{border-color:#e2e7ed}
+.recent-card{border-color:#e2e7ed;border-radius:14px;color:#202124}
+.recent-card:hover{background:#f0f4fa;border-color:#dae3ee;filter:none}
+.primary,.secondary{border-radius:10px}
+.primary{background:#c2e7ff;color:#102c43}
+.primary:not(:disabled):hover{background:#b4ddfa;filter:none}
+.secondary{background:#fff;border-color:#dce2e9;color:#34434f}
+.secondary:not(:disabled):hover{background:#edf2f8;filter:none}
+.text-button:not(:disabled):hover,.icon-button:not(:disabled):hover{background:#e8eef7;filter:none}
+input:not([type=checkbox]):not([type=range]),select,textarea{border-color:#d6dce4;border-radius:9px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid #4e7eb1;outline-offset:2px}
+.category-options{gap:12px}
+.category-choice{border:1px solid #e0e6ed;border-radius:16px;padding:19px;background:#fff}
+.create-choices .category-choice:not(.chosen),.create-choices .mode-card:not(.chosen),.create-choices .learning-options button:not(.chosen):not(:disabled){background:#fff}
+.create-choices .category-choice:not(:disabled):not(.chosen):hover,.create-choices .mode-card:not(:disabled):not(.chosen):hover,.create-choices .learning-options button:not(:disabled):not(.chosen):hover{background:#edf2f8;filter:none}
+.create-choices .category-choice.chosen,.create-choices .mode-card.chosen,.create-choices .learning-options button.chosen{background:#dce9f9;border-color:transparent;box-shadow:none}
+.mode-card{border-radius:16px}
+.mode-icon{border-radius:12px;background:#f1f4f8;border-color:#e3e8ef;color:#34434f}
+.create-choices .mode-card.chosen .mode-icon{background:#cddff4;border-color:transparent}
+.radio-circle{border-color:#c5cdd7}
+.create-choices .mode-card.chosen .radio-circle{background:#355f8c;border-color:#355f8c}
+.choice-heading{color:#5f6368}
+.learning-options{background:#edf2f8;border-color:transparent;border-radius:16px;padding:12px}
+.learning-options button{border-radius:12px;border-color:#e4e9ef}
+.learning-options .planned-choice{background:#f1f3f6;border-color:#dce2e9;color:#68717c}
+.planned-choice>span,.planned-label{color:#737d88}
+.workspace{border-color:#e4e9ef;border-radius:18px}
+.actions-panel,.settings-panel{background:#fafbfd;border-color:#e5eaf0}
+.action-item{border-radius:10px}
+.action-item.selected{background:#dce9f9;border-color:transparent}
+.object-config,.object-camera,.object-output{border-color:#e4e9ef;border-radius:16px}
+.object-notice,.serial-feedback{border-radius:8px}
+.delete-dialog,.sample-editor{border-color:#e0e6ed;border-radius:16px}
