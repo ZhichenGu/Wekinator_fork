@@ -117,3 +117,5 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 .object-config,.object-camera,.object-output{border-color:#e4e9ef;border-radius:16px}
 .object-notice,.serial-feedback{border-radius:8px}
 .delete-dialog,.sample-editor{border-color:#e0e6ed;border-radius:16px}
+
+.output-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:8px;padding:4px;border-radius:12px;background:#edf2f8}.output-choices button{min-width:0;min-height:38px;padding:7px 3px;border:0;border-radius:9px;background:transparent;color:#52616e;font-size:12px;line-height:1.35;overflow-wrap:anywhere}.output-choices button:not(:disabled):hover{background:#e2eaf3;filter:none}.output-choices button.selected,.output-choices button.selected:not(:disabled):hover{background:#d4e5f8;color:#193e64;font-weight:600;filter:none}.output-choices button:focus-visible{outline:2px solid #4e7eb1;outline-offset:2px}
