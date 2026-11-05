@@ -1,0 +1,3 @@
+import React from 'react';import {test} from 'node:test';import assert from 'node:assert/strict';import {renderToStaticMarkup} from 'react-dom/server';import {RecordingControls} from './RecordingControls';
+const render=(recording:boolean,preparing:boolean)=>renderToStaticMarkup(<RecordingControls recording={recording} preparing={preparing} disabled={false} hasSamples={false} onStart={()=>{}} onCancel={()=>{}} onSave={()=>{}}/>);
+test('recording exposes separate cancel and save buttons, countdown cannot save',()=>{const active=render(true,false);assert.ok(active.includes('录好了，保存'));assert.equal((active.match(/disabled=/g)??[]).length,1);const prep=render(false,true);assert.ok(prep.includes('取消准备'));assert.equal((prep.match(/disabled=/g)??[]).length,2);});
