@@ -75,6 +75,7 @@ function App() {
   const [camera,setCamera]=useState<'off'|'loading'|'on'>('off');
   const [frame,setFrame]=useState<Frame|null>(null); const [previewPoints,setPreviewPoints]=useState<Point[]>([]); const [ms,setMs]=useState(0);
   const [notice,setNotice]=useState(''); const [saved,setSaved]=useState('尚未保存');
+  useEffect(()=>{if(!notice)return;const timer=window.setTimeout(()=>setNotice(''),5000);return()=>window.clearTimeout(timer);},[notice]);
   const [recording,setRecording]=useState(false); const [countdown,setCountdown]=useState<number|null>(null);
   const [recordProgress,setRecordProgress]=useState(0); const [duration,setDuration]=useState(3);
   const [running,setRunning]=useState(false); const runningRef=useRef(false);
