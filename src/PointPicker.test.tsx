@@ -33,3 +33,27 @@ test('selected marker is red, keyboard accessible, and region controls have five
  const controls=renderToStaticMarkup(<RegionControls mode="hand" value={DEFAULT_REGION} onChange={()=>{}} disabled={false}/>);
  assert.equal((controls.match(/type="range"/g)??[]).length,5);assert.ok(controls.includes('step=".01"'));
 });
+
+test('SDK zero visibility on hand and face still displays numbered selected landmarks',()=>{
+ for(const mode of ['hand','face'] as const){const points=Array.from({length:478},()=>({x:.4,y:.35,visibility:0}));const pair=mode==='hand'?[2,8]:[13,14];
+ const svg=renderToStaticMarkup(<PointPicker points={points} mode={mode} selected={pair} onSelect={()=>{}}/>);
+ assert.ok(svg.includes(`A · ${pair[0]}`));assert.ok(svg.includes(`B · ${pair[1]}`));
+ assert.equal((svg.match(/fill="#dc3545"/g)??[]).length,2);
+ assert.equal((svg.match(/data-landmark-label=/g)??[]).length,mode==='hand'?21:12);
+ assert.ok(regionPoint(mode,points,{...DEFAULT_REGION,point:pair[0]}));
+ const f=relationFrame(mode,points); // The frame can fail scale validation, but visibility must not hide numbered points.
+ assert.ok(f);
+ }
+ const body=Array.from({length:33},()=>({x:.4,y:.35,visibility:.1}));
+ const svg=renderToStaticMarkup(<PointPicker points={body} mode="pose" selected={[15,16]} onSelect={()=>{}}/>);
+ assert.equal((svg.match(/data-landmark-label=/g)??[]).length,0);
+});
+test('point choices explain anatomy and region highlights its single selected point',async()=>{
+ const {landmarkLabel}=await import('./landmark-labels');assert.ok(landmarkLabel('hand',8).includes('食指尖'));
+ const points=Array.from({length:21},()=>({x:.4,y:.35,visibility:0}));
+ const svg=renderToStaticMarkup(<PointPicker points={points} mode="hand" selected={[0]} region={{...DEFAULT_REGION,point:0}} onSelect={()=>{}}/>);
+ assert.equal((svg.match(/fill="#dc3545"/g)??[]).length,1);
+ assert.equal((svg.match(/data-landmark-label=/g)??[]).length,21);
+ const controls=renderToStaticMarkup(<RegionControls mode="hand" value={DEFAULT_REGION} onChange={()=>{}} disabled={false}/>);
+ assert.ok(controls.includes('0 · 手腕'));assert.ok(controls.includes('8 · 食指尖'));
+});

@@ -2,7 +2,7 @@ import type {Mode,Point} from './core';
 export const landmarkIds=(mode:Mode)=>mode==='hand'?Array.from({length:21},(_,i)=>i):mode==='pose'?Array.from({length:33},(_,i)=>i):[1,4,33,133,263,362,61,291,13,14,152,10];
 export const validLandmark=(mode:Mode,id:number)=>landmarkIds(mode).includes(id);
 export function trackedPoint(mode:Mode,points:Point[],id:number):[number,number]|null {
- const p=points[id];return !p||!Number.isFinite(p.x)||!Number.isFinite(p.y)||(p.visibility??1)<.45?null:[1-p.x,p.y];
+ const p=points[id];return !p||!Number.isFinite(p.x)||!Number.isFinite(p.y)||(mode==='pose'&&(p.visibility??1)<.45)?null:[1-p.x,p.y];
 }
 export function regionPoint(mode:Mode,points:Point[],r:RegionConfig):[number,number]|null {
  if(r.point!==undefined)return validLandmark(mode,r.point)?trackedPoint(mode,points,r.point):null;
