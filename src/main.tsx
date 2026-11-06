@@ -1,3 +1,5 @@
+import {LearnLinks,LearnPage} from './Learn';
+import type {GuideId} from './learn-content';
 import {AudioStudio} from './AudioStudio';
 import {audioTitle,newAudioProject,listAudioProjects,saveAudioProject,deleteAudioProject,cleanAudioProject,type AudioProject} from './audio';
 import {DEFAULT_RELATION,relationValue} from './relation';
@@ -46,11 +48,12 @@ const uid=()=>crypto.randomUUID();
 const makeAction=(index=0,existing:string[]=[]):Action=>{while(existing.includes(t('动作 {0}',String.fromCharCode(65+index))))index++;return ({id:uid(),name:t('动作 {0}',String.fromCharCode(65+index)),effect:'indicator',color:COLORS[index%COLORS.length],samples:[],trained:false,threshold:.8});};
 function App() {
   const language=useLanguage();
-  const [page,setPage]=useState<'home'|'create'|'studio'|'objects'|'audio'>('home');
+  const [page,setPage]=useState<'home'|'create'|'studio'|'objects'|'audio'|'learn'>('home');
   const [project,setProject]=useState<Project|null>(null);
   const projectRef=useRef<Project|null>(null); projectRef.current=project;
   const [visualTask,setVisualTask]=useState<'presence'|'count'|'condition'>('presence');
   const [audioTask,setAudioTask]=useState<'keyword'|'event'|'volume'>('keyword');
+  const [guideId,setGuideId]=useState<GuideId>('serial');
   const [inputCategory,setInputCategory]=useState<InputCategory|null>(null);
   const [audioProject,setAudioProject]=useState<AudioProject|null>(null);
   const [audioProjects,setAudioProjects]=useState<AudioProject[]>([]);
@@ -122,7 +125,7 @@ function App() {
   const isContinuous=project?.learning==='continuous';
   const isPose=project?['pose','continuous'].includes(learningMode(project)):false;
 
-  useEffect(()=>{window.scrollTo(0,0);},[page]);
+  useEffect(()=>{window.scrollTo(0,0);},[page,guideId]);
   useEffect(()=>{loadProject().then(p=>{if(p)setRecent(validateProject(p));void refreshTracking();}).catch(()=>setNotice('本地存储暂不可用，仍可通过导出保存项目。'));return ()=>{generation.current++;streamRef.current?.getTracks().forEach(t=>t.stop());workerRef.current?.terminate();mainDetector.current?.close();cancelAnimationFrame(rafRef.current);if(timerRef.current)clearInterval(timerRef.current);if(recordStopTimer.current)clearTimeout(recordStopTimer.current);if(signalTimer.current)clearTimeout(signalTimer.current);evaluationWorker.current?.terminate();};},[]);
   useEffect(()=>{
     if(!project)return;
@@ -323,7 +326,9 @@ function App() {
 
       <ProjectLibrary title="声音项目" empty="暂无声音项目" items={audioProjects.map(p=>({id:p.id,name:p.name,detail:t(audioTitle(p.task))}))} onOpen={id=>{const p=audioProjects.find(p=>p.id===id);if(p){setAudioProject(p);setPage('audio');}}} onRename={id=>{const p=audioProjects.find(p=>p.id===id);if(p)setRenaming({kind:'audio',id,name:p.name});}} onDelete={id=>{const p=audioProjects.find(p=>p.id===id);if(p)requestDelete({kind:'project',id:'audio:'+id,name:p.name});}}/>
       </div>
+      <LearnLinks onOpen={id=>{setNotice('');setGuideId(id);setPage('learn');}}/>
     </main>}
+    {page==='learn'&&<LearnPage guideId={guideId} onSelect={setGuideId} onBack={()=>setPage('home')}/>}
     {page==='create' &&<main className="create-page"><button className="text-button" onClick={()=>setPage('home')}><ArrowLeft size={16}/>{t("返回首页")}</button><div className="create-heading"><div className="create-title-row"><h1>{t("新建项目")}</h1><p className="output-summary">{t("支持通过 Serial 向 Arduino 输出数据，或通过 MQTT 向 ESP32 输出数据。OSC 规划中。")}</p></div></div><label className="project-name">{t("项目名称")}<input maxLength={80} value={name} onChange={e=>setCustomName(e.target.value)} placeholder={t("给你的交互起个名字")}/></label><CreateChoices category={inputCategory} onCategory={setInputCategory} mode={mode} onMode={setMode} learning={learning} onLearning={setLearning} modes={MODES} visual={visualTask} onVisual={setVisualTask} audio={audioTask} onAudio={setAudioTask}/><div className="create-footer"><p>{inputCategory&&inputCategory!=='audio'?t("摄像头将在工作台中开启。"):inputCategory==='audio'?t("麦克风将在工作台中开启。"):t("选择分类后显示对应选项。")}</p><button className="primary" disabled={!name.trim()||!inputCategory} onClick={()=>{if(!inputCategory)return;if(inputCategory==='audio'){setAudioProject(newAudioProject(name.trim(),audioTask));setPage('audio');return;}if(inputCategory==='vision'){setObjectProject({...newObjectProject(name.trim(),visualTask),task:visualTask,minCount:1});setPage('objects');}else enter({schemaVersion:1,name:name.trim(),mode,learning,feature:learning==='dynamic'?'both':'shape',actions:learning==='continuous'?[{...makeAction(),controlValue:0},{...makeAction(1),controlValue:1}]:[makeAction()],updatedAt:new Date().toISOString()});}}>{t("进入工作台")}<ArrowRight size={18}/></button></div></main>}
     {page==='audio'&&audioProject&&<AudioStudio initial={audioProject} onBack={()=>setPage('home')} onSaved={()=>setAudioProjects(listAudioProjects())}/>}
     {page==='objects'&&objectProject&&<ObjectStudio initial={objectProject} onBack={()=>setPage('home')} onSaved={()=>refreshObjects()}/>}
