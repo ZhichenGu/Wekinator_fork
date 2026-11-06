@@ -678,5 +678,10 @@
   "API 计数是估计值，拥挤或遮挡可能影响结果。": "API counts are estimates. Crowding and occlusion may affect results.",
   "关系成立中": "Relationship holds",
   "关系未成立": "Relationship not met",
-  "已触发，请解除关系": "Triggered — release the relationship to rearm"
+  "已触发，请解除关系": "Triggered — release the relationship to rearm",
+  "录制准备时间": "Preparation time",
+  "立即开始": "Start immediately",
+  "1 秒": "1 second",
+  "3 秒": "3 seconds",
+  "录制准备时间无效。": "Invalid recording preparation time."
 }

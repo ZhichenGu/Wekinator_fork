@@ -9,7 +9,7 @@ export type Frame = { t: number; points: Point[]; shape: number[]; root: [number
 export const MAX_SAMPLES_PER_ACTION = 100;
 export type Sample = { id: string; frames: Frame[]; duration: number; negative: boolean; split?: 'train'|'test'; aspectRatio?: number };
 export type Action = { id: string; name: string; effect: 'indicator' | 'serial' | 'mqtt'; serial?: SerialMessage; mqtt?: MqttMessage; color: string; samples: Sample[]; trained: boolean; threshold: number; controlValue?:number };
-export type Project = { id?:string; schemaVersion: 1; name: string; mode: Mode; feature: FeatureMode; learning?: 'dynamic'|'pose'|'continuous'|'region'|'relation'; relation?:RelationConfig; region?:RegionConfig; poseHoldSeconds?: number; actions: Action[]; mqtt?: BrokerConfig; serialBaudRate?: number; recordingDuration?: number; updatedAt: string };
+export type Project = { id?:string; schemaVersion: 1; name: string; mode: Mode; feature: FeatureMode; learning?: 'dynamic'|'pose'|'continuous'|'region'|'relation'; relation?:RelationConfig; region?:RegionConfig; poseHoldSeconds?: number; actions: Action[]; mqtt?: BrokerConfig; serialBaudRate?: number; recordingDuration?: number; recordingDelay?: 0|1|3; updatedAt: string };
 export type Template = { actionId: string; duration: number; sequence: number[][]; energy: number; negative: boolean };
 
 export function appendSample(action: Action, sample: Sample): Action {
@@ -155,6 +155,7 @@ export function validateProject(data: unknown): Project {
   if(p.region!==undefined&&!validRegion(p.region))throw new Error('区域设置无效。');
   if(p.poseHoldSeconds!==undefined&&(!Number.isFinite(p.poseHoldSeconds)||p.poseHoldSeconds<.1||p.poseHoldSeconds>3))throw new Error('姿态确认时间无效。');
   if(p.learning==='pose'||p.learning==='continuous')p.feature='shape';
+  if(p.recordingDelay!==undefined&&![0,1,3].includes(p.recordingDelay))throw new Error('录制准备时间无效。');
   if(p.recordingDuration!==undefined&&(!Number.isFinite(p.recordingDuration)||p.recordingDuration<1||p.recordingDuration>6))throw new Error('录制时长无效。');
   if(p.serialBaudRate!==undefined&&!BAUD_RATES.includes(p.serialBaudRate))throw new Error('串口波特率无效。');
   if(p.mqtt!==undefined){if(!p.mqtt||typeof p.mqtt.url!=='string'||typeof p.mqtt.username!=='string'||typeof p.mqtt.clientId!=='string'||typeof p.mqtt.passwordRequired!=='boolean')throw new Error('MQTT 连接配置无效。');p.mqtt=validateBroker(p.mqtt);}
