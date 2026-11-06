@@ -1,5 +1,5 @@
 import {buildTemplates,match,TriggerGate,type Action,type Frame,type Project,type Sample,type Template} from './core';
-export type LearningMode='dynamic'|'pose'|'continuous';
+export type LearningMode='dynamic'|'pose'|'continuous'|'region'|'relation';
 export const learningMode=(p:Project):LearningMode=>p.learning??'dynamic';
 export type PosePrototype={actionId:string;vector:number[];negative:boolean};
 export function vectorDistance(a:number[],b:number[]):number{

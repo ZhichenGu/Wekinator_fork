@@ -1,3 +1,5 @@
+import {validRelation,type RelationConfig} from './relation';
+import {validRegion,type RegionConfig} from './region';
 import { validateBroker, validateMqttMessage, type BrokerConfig, type MqttMessage } from './mqtt-output';
 import { BAUD_RATES, type SerialMessage } from './serial';
 export type Mode = 'hand' | 'face' | 'pose';
@@ -7,7 +9,7 @@ export type Frame = { t: number; points: Point[]; shape: number[]; root: [number
 export const MAX_SAMPLES_PER_ACTION = 100;
 export type Sample = { id: string; frames: Frame[]; duration: number; negative: boolean; split?: 'train'|'test'; aspectRatio?: number };
 export type Action = { id: string; name: string; effect: 'indicator' | 'serial' | 'mqtt'; serial?: SerialMessage; mqtt?: MqttMessage; color: string; samples: Sample[]; trained: boolean; threshold: number; controlValue?:number };
-export type Project = { id?:string; schemaVersion: 1; name: string; mode: Mode; feature: FeatureMode; learning?: 'dynamic'|'pose'|'continuous'; poseHoldSeconds?: number; actions: Action[]; mqtt?: BrokerConfig; serialBaudRate?: number; recordingDuration?: number; updatedAt: string };
+export type Project = { id?:string; schemaVersion: 1; name: string; mode: Mode; feature: FeatureMode; learning?: 'dynamic'|'pose'|'continuous'|'region'|'relation'; relation?:RelationConfig; region?:RegionConfig; poseHoldSeconds?: number; actions: Action[]; mqtt?: BrokerConfig; serialBaudRate?: number; recordingDuration?: number; updatedAt: string };
 export type Template = { actionId: string; duration: number; sequence: number[][]; energy: number; negative: boolean };
 
 export function appendSample(action: Action, sample: Sample): Action {
@@ -147,7 +149,10 @@ export function validateProject(data: unknown): Project {
   const p = data as Project;
   if (!p || p.schemaVersion!==1 || typeof p.name!=='string' || !p.name.trim() || p.name.length>80 || !['hand','face','pose'].includes(p.mode) || !['shape','path','both'].includes(p.feature) || !Array.isArray(p.actions) || p.actions.length>12) throw new Error('不是支持的项目文件，或项目版本不兼容。');
   if(p.id!==undefined&&(typeof p.id!=='string'||!/^[-a-zA-Z0-9_]{1,100}$/.test(p.id)))throw new Error('项目标识无效。');
-  if(p.learning!==undefined&&!['dynamic','pose','continuous'].includes(p.learning))throw new Error('不支持的学习方式。');
+  if(p.learning!==undefined&&!['dynamic','pose','continuous','region','relation'].includes(p.learning))throw new Error('不支持的学习方式。');
+  if((p.learning==='region'||p.learning==='relation')&&p.actions.length>1)throw new Error('区域模式只支持一个触发项。');
+  if(p.relation!==undefined&&!validRelation(p.relation))throw new Error('关系设置无效。');
+  if(p.region!==undefined&&!validRegion(p.region))throw new Error('区域设置无效。');
   if(p.poseHoldSeconds!==undefined&&(!Number.isFinite(p.poseHoldSeconds)||p.poseHoldSeconds<.1||p.poseHoldSeconds>3))throw new Error('姿态确认时间无效。');
   if(p.learning==='pose'||p.learning==='continuous')p.feature='shape';
   if(p.recordingDuration!==undefined&&(!Number.isFinite(p.recordingDuration)||p.recordingDuration<1||p.recordingDuration>6))throw new Error('录制时长无效。');

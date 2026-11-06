@@ -1,3 +1,4 @@
+import {createAudioApi} from './audio-api.mjs';
 import http from 'node:http';
 import {createObjectApi} from './object-api.mjs';
 import path from 'node:path';
@@ -8,8 +9,8 @@ import {createAccessGate} from './access.mjs';
 const dist=fileURLToPath(new URL('../dist/',import.meta.url));
 const gate=createAccessGate();
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.wasm':'application/wasm','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg'};
-const api=createObjectApi();
-const server=http.createServer((req,res)=>void gate(req,res,()=>void api(req,res,()=>void serve(req,res))).catch(()=>{if(!res.headersSent)res.writeHead(500);res.end('服务器错误。');}));
+const api=createObjectApi(),audioApi=createAudioApi();
+const server=http.createServer((req,res)=>void gate(req,res,()=>void api(req,res,()=>void audioApi(req,res,()=>void serve(req,res)))).catch(()=>{if(!res.headersSent)res.writeHead(500);res.end('服务器错误。');}));
 async function serve(req,res){
   if(!['GET','HEAD'].includes(req.method??'')){res.writeHead(405);res.end();return;}
   try{
