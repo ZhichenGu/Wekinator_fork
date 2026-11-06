@@ -812,5 +812,20 @@
   "官方资料与演示": "Official resources and demos",
   "新窗口打开": "Opens in a new window",
   "资料核对：2026-11-06。服务套餐与控制台界面以官方当前信息为准。": "Resources checked: 2026-11-06. Refer to current official plans and console interfaces.",
-  "地址示例：网页 wss://YOUR_HOST:8084/mqtt；ESP32 主机 YOUR_HOST、TLS 端口 8883。替换自己的主机，端口与路径以控制台为准。": "Example: browser wss://YOUR_HOST:8084/mqtt; ESP32 host YOUR_HOST, TLS port 8883. Replace YOUR_HOST and follow your console for ports and paths."
+  "地址示例：网页 wss://YOUR_HOST:8084/mqtt；ESP32 主机 YOUR_HOST、TLS 端口 8883。替换自己的主机，端口与路径以控制台为准。": "Example: browser wss://YOUR_HOST:8084/mqtt; ESP32 host YOUR_HOST, TLS port 8883. Replace YOUR_HOST and follow your console for ports and paths.",
+  "点击画面中的骨骼点，选择一个检测点。红点进入区域后开始计时。": "Click a landmark to select one detection point. Timing starts when the red point enters the region.",
+  "检测点": "Detection point",
+  "髋部中心": "Hip center",
+  "骨骼点 {0}": "Landmark {0}",
+  "{0}滑条": "{0} slider",
+  "选择 A 或 B，再点击画面中的骨骼点。只比较这两个点。": "Choose A or B, then click a landmark. Only these two points are compared.",
+  "检测点 {0}": "Detection point {0}",
+  "双手腕高于各自肩部；选择自定义点后比较 A 是否高于 B。": "Both wrists above their shoulders. Custom points compare whether A is above B.",
+  "判断 A 是否高于 B。": "Check whether A is above B.",
+  "距离按目标尺寸归一化，不随窗口大小改变。": "Distance is normalized by target size, independent of window size.",
+  "点击选择检测点": "Click to select a detection point",
+  "选择骨骼点 {0}": "Select landmark {0}",
+  "当前距离：{0}（相对尺寸）": "Current distance: {0} (relative size)",
+  "选择 A 或 B，再点击画面中的骨骼点。": "Choose A or B, then click a landmark.",
+  "点击骨骼点选择检测位置；红点进入区域后开始计时。": "Click a landmark to choose the detection point. Timing starts when the red point enters the region."
 }

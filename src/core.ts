@@ -1,5 +1,5 @@
 import {validRelation,type RelationConfig} from './relation';
-import {validRegion,type RegionConfig} from './region';
+import {validRegion,validLandmark,type RegionConfig} from './region';
 import { validateBroker, validateMqttMessage, type BrokerConfig, type MqttMessage } from './mqtt-output';
 import { BAUD_RATES, type SerialMessage } from './serial';
 export type Mode = 'hand' | 'face' | 'pose';
@@ -151,8 +151,8 @@ export function validateProject(data: unknown): Project {
   if(p.id!==undefined&&(typeof p.id!=='string'||!/^[-a-zA-Z0-9_]{1,100}$/.test(p.id)))throw new Error('项目标识无效。');
   if(p.learning!==undefined&&!['dynamic','pose','continuous','region','relation'].includes(p.learning))throw new Error('不支持的学习方式。');
   if((p.learning==='region'||p.learning==='relation')&&p.actions.length>1)throw new Error('区域模式只支持一个触发项。');
-  if(p.relation!==undefined&&!validRelation(p.relation))throw new Error('关系设置无效。');
-  if(p.region!==undefined&&!validRegion(p.region))throw new Error('区域设置无效。');
+  if(p.relation!==undefined&&(!validRelation(p.relation)||p.relation.points?.some(i=>!validLandmark(p.mode,i))))throw new Error('关系设置无效。');
+  if(p.region!==undefined&&(!validRegion(p.region)||(p.region.point!==undefined&&!validLandmark(p.mode,p.region.point))))throw new Error('区域设置无效。');
   if(p.poseHoldSeconds!==undefined&&(!Number.isFinite(p.poseHoldSeconds)||p.poseHoldSeconds<.1||p.poseHoldSeconds>3))throw new Error('姿态确认时间无效。');
   if(p.learning==='pose'||p.learning==='continuous')p.feature='shape';
   if(p.recordingDelay!==undefined&&![0,1,3].includes(p.recordingDelay))throw new Error('录制准备时间无效。');
