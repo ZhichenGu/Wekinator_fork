@@ -1,126 +1,95 @@
-# 摄像头动作学习 · 预览版 0.11
+# Platform
 
-支持中文 / English 的摄像头动作学习工具。动作追踪在本机处理；物体检测 API 需经确认后发送单张截图。黑白灰界面，状态指示灯按需使用红绿。不使用 OSC。
+[中文](#中文) · [English](#english)
 
-## 网站访问
+## 中文
 
-登录页支持账号密码登录，也可点击“访客进入”以访客身份进入同一平台。访客无需提供账号，API Key 与 MQTT 凭证仍由使用者自行填写。初始账号 `admin`，密码 `0000`；上线前用下面的管理工具修改初始密码。全站资源与 API 都受服务端验证保护。退出撤销当前会话。账号只控制访问，不同步项目；浏览器项目数据不会因登录账号不同而分开。共享电脑请导出并管理本机项目。
+一个受 Wekinator 启发的小工具，用摄像头和麦克风做交互实验。可以录下动作示范，让它学习识别，也可以接入自己的 API 做图像和声音识别。结果通过 Serial 或 MQTT 发给 Arduino、ESP32 或其他程序。
 
-本地管理账号：在项目文件夹的终端运行：
+[打开网站](https://wekinator-fork.onrender.com/) → 点击「访客进入」，或使用账号登录。右上角可以切换中英文。
 
-```sh
-npm run users
-```
+### 可以做什么
 
-工具会显示账号列表，可新建/重设密码、停用或启用。密码输入不显示，工具把随机盐 scrypt 摘要写入 `config/users.json`，不保存明文；文件里 `enabled: false` 表示停用。名称区分大小写，使用 1–48 位字母、数字、点、横线或下划线。每次管理操作都会刷新该账号的会话版本，避免旧登录在重新启用后恢复。
+| 类别 | 功能 |
+| --- | --- |
+| 动作追踪 | 手部、面部、身体；在本机运行 |
+| 视觉识别 | 找物体、计数、判断画面条件；使用自己的 DeepSeek / OpenAI API Key |
+| 声音识别 | 语音关键词：OpenAI / 科大讯飞；声音事件：OpenAI；音量控制：本机处理 |
 
-修改后：本地重启 `npm run dev`；线上将 `config/users.json` 随代码提交并 push 到 Render 连接的分支，等待部署成功。如果关闭自动部署，则在 Render 手动部署。仅修改本地文件或仅 push 完成不会立即更新线上。不要把文件放入 `public` 或 `dist`；公开仓库里的账号名和摘要仍可被阅读，实际密码请设置为足够长且独立使用的密码。
+动作追踪有五种处理方式：
 
-账号文件缺失或格式错误时服务拒绝启动，不回退到共用密码。旧环境变量 `APP_PASSWORD` 不再作为登录入口。`SESSION_SECRET` 可固定会话签名密钥（缺省每次启动随机生成）；HTTPS 部署设 `AUTH_COOKIE_SECURE=true`。改密、停用、移除账号在新服务启动后使旧会话失效。整个服务重启且未固定签名密钥时，所有人需重新登录。
+- **动态动作匹配**：录下一次挥手，完成相似动作时触发一次。
+- **姿态分类**：录下握拳等姿态，识别并稳定确认后触发一次。
+- **连续控制**：给不同姿态设置数值，训练后持续输出中间值，例如 `0.12 → 0.45 → 0.83`。
+- **区域与停留**：选一个点，进入指定区域并停留后触发，无需训练。
+- **动作关系**：选两个点，判断距离或上下关系，无需训练。
 
-本地开发使用 `npm run dev`。正式运行使用 `npm run build` 后 `npm start`，默认监听 `127.0.0.1:5173`。不需要额外账号数据库。GitHub Pages 静态托管不能运行账号验证，继续使用 Node/Render。
+新建项目时，把鼠标放在处理方式上可以查看具体例子。
 
-## 启动与检查
+### 如何使用
 
-需要 Node.js 22.12 或更高兼容版本。
+1. 新建项目，选择输入和处理方式。
+2. 动作学习先录制示范、再训练；区域与动作关系直接设置规则。视觉和声音 API 使用者需填写自己的凭证。
+3. 选择状态灯、Serial 或 MQTT，测试后开始运行。
+
+Serial 用 USB 连接设备，建议使用桌面 Chrome 或 Edge。MQTT 在网页中填写 Broker 的 WebSocket 地址，HTTPS 网站使用 `wss://`。首页有连接教程和 Arduino / ESP32-S3 案例下载。OSC 规划中。
+
+项目保存在当前浏览器，可导出备份，不会跟随账号同步。API Key 和 MQTT 密码不写入项目。动作追踪在本机处理；API 识别会把提交的图片或音频经网站服务发给所选平台，使用你自己的额度。
+
+### 本地运行
+
+需要 Node.js 22.12 或更高版本。
 
 ```sh
 npm install
 npm run dev
-npm test
-npm run build
 ```
 
-在 localhost 或 HTTPS 下开启摄像头。依赖使用仓库级 npm registry 配置，不修改系统配置。模型与 WASM 随本地工程提供，不上传摄像头视频。
-
-## 使用
-
-1. 新建或打开项目，选择手部、面部或身体之一。当前为单人、单手，未实现双手融合。
-2. 新建时可选动态动作匹配或姿态分类。姿态分类录制时保持一种姿态；同一类别可追加多次录制，每个动作最多 100 次。复制同一录制不会增加学习信息，完全重复模板在构建时合并。
-3. 录制用途可选训练或独立测试；测试录制不参与训练。时长支持两位小数，当前 1.00–6.00 秒；阈值支持 50.00–98.00 / 100。追加或删除录制后重新训练。
-4. 输出依次为状态灯、Serial、MQTT。动态动作完整匹配后触发一次；姿态分类稳定确认后触发一次，保持不重复，切换或退出后可再次触发。
-5. 项目在当前浏览器自动保存，可导出/导入 JSON。MQTT 密码仅在当前会话保留，不写入项目文件。项目、动作、录制均有删除入口。
-
-## 独立测试
-
-在“独立测试”标签页运行。后台使用与实时相同的识别器重放留出数据，不发送 Serial/MQTT。报告分别统计正确触发、负例拒绝、漏检、混淆、重复触发，并剔除与训练相同或测试重复的数据。可导出带项目名的 JSON。结果仅对应这些测试录制，不代表其他场景的准确率。
-
-## 输出
-
-状态灯：未运行为灰，运行等待为红，触发短暂为绿；发送失败为红。灯旁有文字说明。串口/MQTT 的连接状态单独显示，不能把动作匹配、消息提交和设备执行视为同一事件。
-
-Serial：选择并授权设备，设置波特率，连接，填写自定义 UTF-8 文字与结束符。一次匹配发送一次；未匹配不发送 NO。浏览器仅能枚举已授权设备。设备名称以浏览器选择器为准，页面以序号与 USB 标识区分。实际硬件收发尚待实测。
-
-MQTT：填写 WebSocket URL、可选用户名与密码、Topic、消息内容和 QoS；保存配置，再连接。完整地址已含端口和路径，无需另填 TCP 端口。HTTPS 使用 WSS。不会自动连接、自动重发或发送 retain 消息。QoS 1 的 Broker 确认不是设备执行确认。
-
-可在本机运行开发测试桩（不用于生产）：
+打开终端显示的本地地址。正式运行：
 
 ```sh
-node scripts/mqtt-test-broker.mjs
+npm run build
+npm start
 ```
 
-然后在网页 MQTT 中设置 URL `ws://127.0.0.1:18884/mqtt`，Topic `/qa/action`，任意测试消息和 QoS 1。测试桩只监听本机，在终端记录收到的发布；`http://127.0.0.1:18884/records` 返回测试记录。它不验证真实 Broker 的认证、TLS 或硬件。
+检查代码用 `npm test`。账号管理用 `npm run users`。项目使用 React、TypeScript、Vite、Node.js 和 MediaPipe；视觉与声音 API 需要 Node 服务，不能只部署静态文件。
 
-## 实现与边界
+## English
 
-TypeScript + React + Vite，MediaPipe Tasks Vision 检测，归一化相对特征与整手轨迹。动态模式用 DTW 序列模板；姿态模式用稳定录制的中位数原型、未知拒绝和稳定确认触发。模板构建不是骨骼网络训练，匹配分数不是准确率。
+A small tool inspired by Wekinator, built for interactive experiments with a camera and microphone. Record examples to teach it gestures and poses, or use your own API credentials for image and audio recognition. Send results to Arduino, ESP32 or other software through Serial or MQTT.
 
-预览区域固定高 360 CSS px，按实际画面比例居中留黑；视频与骨骼叠加共用矩形。Worker 不兼容时使用限频主线程回退；时序匹配仍在主线程，不承诺固定帧率。
+[Open the website](https://wekinator-fork.onrender.com/) → choose **Continue as guest**, or sign in. Switch languages in the top-right corner.
 
-34 项算法/数据/传输测试与 2 项访问验证测试通过，生产构建通过。已有浏览器 MQTT 对本机测试桩发包验证。真实摄像头识别质量、实际 Arduino、外部 Broker 认证/TLS 尚未验证。未完成连续控制、双手、物体检测、云端 API 或 Mac 封装。本轮详见 `docs/0.3更新与验收记录.md`。
+### What it does
 
-## 版本
+| Category | Features |
+| --- | --- |
+| Motion tracking | Hands, face and body; runs locally |
+| Visual recognition | Object detection, counting and visual conditions; your own DeepSeek / OpenAI API key |
+| Audio recognition | Speech keywords: OpenAI / iFLYTEK; sound events: OpenAI; volume control: local |
 
-本轮为 `0.3`，包版本为 `0.3.0`。每轮完成并验证后更新 `src/release.ts`、包版本和加载提示；不按每次保存文件递增版本，不添加人为加载延迟。
+Motion tracking offers five methods:
 
-## 案例代码下载
+- **Dynamic action matching**: record a wave, then trigger once after a similar movement.
+- **Pose classification**: record a held pose, such as a fist, and trigger after stable recognition.
+- **Continuous control**: assign values to poses, train, then output intermediate values such as `0.12 → 0.45 → 0.83`.
+- **Region and dwell**: choose one point and trigger when it stays in a region. No training needed.
+- **Pose relationships**: choose two points and check their distance or vertical order. No training needed.
 
-Serial、MQTT 都有左侧“测试发送”、右侧“案例代码下载”。
+Hover over a method when creating a project to see examples.
 
-- `public/examples/serial_success_led.ino`：用户提供的原始串口程序，115200、`/success`、LF，亮灯 3 秒。
-- `public/examples/esp32s3_mqtt_led.ino`：ESP32-S3 / Arduino-ESP32 3.x，安装 PubSubClient。在顶部填写 Wi-Fi 与 MQTT 配置，默认 Topic `project/action`、消息 `YES`。收到匹配消息后 RGB 绿灯亮 3 秒。板上使用 Broker 的 TCP/TLS 端口，与网页 WebSocket 地址区分。
+### Getting started
 
-RGB 优先使用板型定义；可用 `CUSTOM_RGB_LED_PIN` 覆盖。DevKitC-1 v1.1 的 RGB GPIO 为 38，v1.0 为 48。TLS 需填写可信根证书。固件在当前环境未做工具链编译和板上烧录验证，下载内容已核对。
+1. Create a project and choose an input and processing method.
+2. Record and train for gesture or pose learning, or set rules for regions and relationships. API recognition needs your own credentials.
+3. Choose a status light, Serial or MQTT output, test it, then start.
 
-## 0.4 身体预览修复
+For Serial, connect your device over USB and use desktop Chrome or Edge. For MQTT, enter the broker’s WebSocket address; HTTPS sites require `wss://`. The home page includes connection guides and Arduino / ESP32-S3 example downloads. OSC is planned.
 
-身体骨骼预览与可训练帧分开处理。腿部未入镜时仍显示可信的上半身关节，并提示全身不完整；训练和运行仍要求完整身体。模型已就绪、尚未检测到目标与身体不完整分别显示状态。详情见 docs/0.4身体追踪修复.md。
+Projects stay in the current browser. Export them for backup; signing in does not sync them. API keys and MQTT passwords are not included in project files. Motion tracking runs locally. API recognition sends submitted images or audio through the website’s server to your chosen provider and uses your own API credit.
 
-## 0.5 物体检测 · API
+### Running locally
 
-新建项目可选择独立的物体检测工作台。用户输入自己的 OpenAI/DeepSeek Key，指定一个目标标签，手动检测截图/图片或定时识别，返回 YES/NO 红绿灯并复用 Serial/MQTT。无需训练，无检测框。Key 只保留当前页面内存，项目采用白名单保存，不含密钥和截图。
+Use Node.js 22.12 or later. Run `npm install`, then `npm run dev` and open the address shown in the terminal. For production, run `npm run build`, then `npm start`.
 
-`npm run dev` 与 `npm start` 均支持受全站密码保护的 `/api/objects/check`、`/api/objects/detect`；无需统一服务器 API Key。真实图片调用由用户主动确认，使用个人平台额度。自动化 50 项测试通过，平台 Key、真实摄像头和硬件联调需分别实测。
-
-详见 [0.5规格与验收](docs/0.5物体检测API规格与验收.md) 和 [规则审阅](docs/指令审阅与优化-0.5.md)。本轮没有推送或部署 Render。
-
-## 0.6 提前保存录制
-
-录制区分为“录制示例 / 取消录制 / 录好了，保存”。最长录制时间到达仍自动保存；手动保存按真实录制时间校验，不再要求达到原定 3 秒的 75%。过短、采样不足和追踪中断仍拒绝保存。首页统一为“追踪项目 / 物体检测项目”。本轮 55 项自动化测试与构建通过；未进行真实摄像头录制或线上发布。
-
-## 0.8 中文 / English
-
-右上角地球图标旁可即时切换中文和 English，刷新后记住选择；登录页也提供中英入口。翻译覆盖新建项目、手/脸/身体工作台、录制按钮、测试报告、API 物体检测、Serial/MQTT 设置及常见提示。切换不刷新页面，不重置正在编辑的工作台。
-
-项目名、动作名、目标标签、Topic、API Key 和发送内容保持原文；英文下新建项目使用英文默认名称/目标，旧数据不迁移。语言偏好仅存为普通本地设置和 Cookie，和访问密码/Key 分离。
-
-60 项测试与构建通过；浏览器验证中英往返、英文登录和刷新记忆，1280/390 像素排版无横向控件溢出。未调用付费 API、未使用摄像头或硬件；未提交或部署 Render。
-
-## 0.9：整理示例与项目
-
-- 点击录制条目的回放按钮，设置起点和终点，或将当前帧设为边界，再应用裁剪。保留实际采样帧并重新计时；过短或追踪不连续的区间不能保存。裁剪训练录制后需重新训练，裁剪测试录制不改变训练模板；独立测试报告需重新生成。取消编辑不改原录制。
-- 工作台快捷键：R 开始录制；录制中再次按 R 提前保存；Esc 取消录制或倒计时。输入文字、弹窗、运行及测试期间不会误启动录制。原有三个录制按钮继续保留。
-- 首页分别列出全部追踪与物体检测项目，可打开、重命名、删除。按独立 ID 保存，同名项目互不覆盖；导入创建新副本。旧版单项目首次读取时迁移，浏览器存储仍只属于当前来源与设备，重要项目请导出。
-- 物体检测可设置每轮自动检测上限，默认 30 次，可选 1–1000 整数次。达到后停止自动请求并保留最后结果；再次明确开始会重置本轮计数。已发出的失败或取消请求也计入；手动检测与验证 Key 不计入。本功能不是账户总费用上限。
-
-验证：单元与服务端检查、生产构建、浏览器裁剪及导出、旧项目保留与多项目刷新恢复、两次上限后停止。API 上限使用本地模拟响应和合成画面验证，未调用真实付费 API，未验证实体摄像头与硬件。
-
-## 0.11 连续控制
-
-新建追踪项目时，学习方式三选一：动态动作匹配（挥手一次触发一次）、姿态分类（识别握拳后触发一次）、连续控制（手张开多少输出对应数值）。输入卡片白底，学习方式卡片浅蓝灰，桌面三列、窄屏单列。
-
-连续控制默认两个数值示例 0 和 1。选择每个示例，保持姿态并录制、训练；可追加多次录制，设置 0–1 的目标值。至少两个不同数值的可区分姿态才能运行。使用尺度/位置归一化的局部特征，以距离加权回归估算中间状态；它不学习完整轨迹，也不是物理角度或概率。
-
-开始运行后显示实时数值。使用当前选中示例的输出配置：Serial 保留结束符，MQTT 保留 Topic/QoS；消息可写 /value/{value}，否则只发送三位小数。限速最多 10 Hz，静止每秒更新一次；只允许一个发送在途，不积压。追踪丢失、数据过期或离示例较远时停止发送；恢复有效追踪后可继续。停止、页面隐藏和发送失败会停止输出，不补发；停发不等于设备归零，接收端需按自己的用途设置超时行为。
-
-测试按钮发送当前示例的目标值。原 LED 开关案例不处理连续数字，请按接收端程序调整。当前不提供回归独立测试报告，不能把分类准确率用于该模式。真实摄像头与实体 Serial/MQTT 硬件还需现场验证。
+Run checks with `npm test` and manage accounts with `npm run users`. Built with React, TypeScript, Vite, Node.js and MediaPipe. Image and audio API features need the Node server; static hosting alone is not enough.

@@ -174,3 +174,10 @@ select{appearance:none;-webkit-appearance:none;padding-right:38px;background-ima
 .settings-panel select{padding-right:38px;background-position:right 12px center}.point-slots button{font-size:12px;line-height:1.5;overflow-wrap:anywhere;min-width:0}.point-picker text{font-family:system-ui,sans-serif}
 
 .method-choice{position:relative;min-width:0}.learning-options .method-choice>button{width:100%;height:100%;min-height:88px}.method-choice:has(.method-tooltip){z-index:10}.method-tooltip{position:absolute;bottom:100%;left:0;width:100%;max-height:320px;overflow:auto;background:#fff;color:#263445;border:1px solid #dce2e9;border-radius:8px;box-shadow:0 6px 20px #24364b26;padding:16px;cursor:default;font-size:13px;line-height:1.65}.method-tooltip>strong{display:block;margin-bottom:12px}.method-tooltip>div+div{margin-top:12px}.method-tooltip b{display:block;font-size:12px;color:#536879;font-weight:600}.method-tooltip p{margin-top:3px;font-size:13px;color:#344454;overflow-wrap:anywhere}
+
+/* Explicit hierarchy overrides broad card text selectors inside the help panel. */
+.create-choices .method-tooltip{padding:20px;max-height:min(70vh,520px);text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:normal}
+.create-choices .method-tooltip>strong{font-size:18px;line-height:1.4;font-weight:650;margin-bottom:18px;color:#263445}
+.create-choices .method-tooltip b{font-size:14px;line-height:1.5;font-weight:600;color:#536879}
+.create-choices .method-tooltip p{font-size:13px;line-height:1.8;font-weight:400;margin:5px 0 0;color:#344454;white-space:normal;overflow:visible;text-overflow:clip;max-width:100%}
+.create-choices .method-tooltip>div+div{margin-top:18px}.learning-options .method-choice>button>strong{font-size:16px;line-height:1.4}.learning-options .method-choice>button>span{font-size:12px;line-height:1.5}.learning-options .method-choice>button>small{font-size:11px;line-height:1.5;color:#687888}
