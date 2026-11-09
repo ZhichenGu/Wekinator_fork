@@ -95,3 +95,5 @@ Projects stay in the current browser. Export them for backup; signing in does no
 Use Node.js 22.12 or later. Run `npm install`, then `npm run dev` and open the address shown in the terminal. For production, run `npm run build`, then `npm start`.
 
 Run checks with `npm test` and manage accounts with `npm run users`. Built with React, TypeScript, Vite, Node.js and MediaPipe. Image and audio API features need the Node server; static hosting alone is not enough.
+
+0.48：空格开始录制，再按空格保存，Esc 取消。录制列表最新在前；记录较多时可点击上下按钮查看。

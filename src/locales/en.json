@@ -1077,5 +1077,14 @@
   "只保存骨骼数据，不保存视频。": "Only landmark data is saved, not video.",
   "规则触发 · 无需训练": "Rule trigger · No training needed",
   "稳定确认进度": "Confirmation progress",
-  "验证 Key 仅检查模型访问权限，不发送截图。": "Key verification checks model access only; no image is sent."
+  "验证 Key 仅检查模型访问权限，不发送截图。": "Key verification checks model access only; no image is sent.",
+  "空格": "Space",
+  "最新在前": "Newest first",
+  "上方还有记录": "More above",
+  "下方还有记录": "More below",
+  "已到顶部": "At the top",
+  "已到底部": "At the bottom",
+  "动作录制列表": "Action recordings",
+  "触发记录列表": "Trigger history",
+  "输出记录列表": "Output history"
 }
