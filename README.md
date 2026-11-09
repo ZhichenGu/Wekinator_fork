@@ -24,7 +24,7 @@
 - **区域与停留**：选一个点，进入指定区域并停留后触发，无需训练。
 - **动作关系**：选两个点，判断距离或上下关系，无需训练。
 
-新建项目时，把鼠标放在处理方式上可以查看具体例子。
+新建项目时，把鼠标放在处理方式上可以查看具体例子。动作学习可以选择「关注部位」的推荐组合，或直接点击骨骼点自定义；修改后需要重新训练。左侧动作名支持双击重命名。
 
 ### 如何使用
 
@@ -76,7 +76,7 @@ Motion tracking offers five methods:
 - **Region and dwell**: choose one point and trigger when it stays in a region. No training needed.
 - **Pose relationships**: choose two points and check their distance or vertical order. No training needed.
 
-Hover over a method when creating a project to see examples.
+Hover over a method when creating a project to see examples. For motion learning, choose a focus preset or click landmarks to customize the points used. Retrain after changing them. Double-click an action name to rename it.
 
 ### Getting started
 

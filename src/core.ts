@@ -5,11 +5,11 @@ import { BAUD_RATES, type SerialMessage } from './serial';
 export type Mode = 'hand' | 'face' | 'pose';
 export type FeatureMode = 'shape' | 'path' | 'both';
 export type Point = { x: number; y: number; z?: number; visibility?: number };
-export type Frame = { t: number; points: Point[]; shape: number[]; root: [number, number]; scale: number };
+export type Frame = { blend?:number[]; t: number; points: Point[]; shape: number[]; root: [number, number]; scale: number };
 export const MAX_SAMPLES_PER_ACTION = 100;
 export type Sample = { id: string; frames: Frame[]; duration: number; negative: boolean; split?: 'train'|'test'; aspectRatio?: number };
 export type Action = { id: string; name: string; effect: 'indicator' | 'serial' | 'mqtt'; serial?: SerialMessage; mqtt?: MqttMessage; color: string; samples: Sample[]; trained: boolean; threshold: number; controlValue?:number };
-export type Project = { id?:string; schemaVersion: 1; name: string; mode: Mode; feature: FeatureMode; learning?: 'dynamic'|'pose'|'continuous'|'region'|'relation'; relation?:RelationConfig; region?:RegionConfig; poseHoldSeconds?: number; actions: Action[]; mqtt?: BrokerConfig; serialBaudRate?: number; recordingDuration?: number; recordingDelay?: 0|1|3; updatedAt: string };
+export type Project = { id?:string; schemaVersion: 1; name: string; mode: Mode; feature: FeatureMode; focus?:number[]; learning?: 'dynamic'|'pose'|'continuous'|'region'|'relation'; relation?:RelationConfig; region?:RegionConfig; poseHoldSeconds?: number; actions: Action[]; mqtt?: BrokerConfig; serialBaudRate?: number; recordingDuration?: number; recordingDelay?: 0|1|3; updatedAt: string };
 export type Template = { actionId: string; duration: number; sequence: number[][]; energy: number; negative: boolean };
 
 export function appendSample(action: Action, sample: Sample): Action {
@@ -149,6 +149,7 @@ export function validateProject(data: unknown): Project {
   const p = data as Project;
   if (!p || p.schemaVersion!==1 || typeof p.name!=='string' || !p.name.trim() || p.name.length>80 || !['hand','face','pose'].includes(p.mode) || !['shape','path','both'].includes(p.feature) || !Array.isArray(p.actions) || p.actions.length>12) throw new Error('不是支持的项目文件，或项目版本不兼容。');
   if(p.id!==undefined&&(typeof p.id!=='string'||!/^[-a-zA-Z0-9_]{1,100}$/.test(p.id)))throw new Error('项目标识无效。');
+  if(p.focus!==undefined&&(!Array.isArray(p.focus)||!p.focus.length||p.focus.length>33||new Set(p.focus).size!==p.focus.length||p.focus.some((id,i)=>!validLandmark(p.mode,id)||(i>0&&id<=p.focus![i-1]))))throw new Error('关注部位无效。');
   if(p.learning!==undefined&&!['dynamic','pose','continuous','region','relation'].includes(p.learning))throw new Error('不支持的学习方式。');
   if((p.learning==='region'||p.learning==='relation')&&p.actions.length>1)throw new Error('区域模式只支持一个触发项。');
   if(p.relation!==undefined&&(!validRelation(p.relation)||p.relation.points?.some(i=>!validLandmark(p.mode,i))))throw new Error('关系设置无效。');
@@ -174,7 +175,7 @@ export function validateProject(data: unknown): Project {
       if(s.split!==undefined&&!['train','test'].includes(s.split))throw new Error('录制用途无效。');
       if(s.aspectRatio!==undefined&&(!Number.isFinite(s.aspectRatio)||s.aspectRatio<.1||s.aspectRatio>10))throw new Error('示例画面比例无效。');
       for (const [i,f] of s.frames.entries()) {
-        if (!f || !Number.isFinite(f.t) || (i>0 && f.t<=s.frames[i-1].t) || !Array.isArray(f.shape) || f.shape.length<2 || f.shape.length>200 || f.shape.some(v=>!Number.isFinite(v)) || !Array.isArray(f.root) || f.root.length!==2 || f.root.some(v=>!Number.isFinite(v)) || !Number.isFinite(f.scale) || f.scale<.015 || !Array.isArray(f.points) || f.points.length>500 || f.points.some(pt=>!pt || !Number.isFinite(pt.x) || !Number.isFinite(pt.y))) throw new Error('示例包含无效坐标或时间戳。');
+        if (!f || (f.blend!==undefined&&(!Array.isArray(f.blend)||f.blend.length>100||f.blend.some(v=>!Number.isFinite(v)))) || !Number.isFinite(f.t) || (i>0 && f.t<=s.frames[i-1].t) || !Array.isArray(f.shape) || f.shape.length<2 || f.shape.length>200 || f.shape.some(v=>!Number.isFinite(v)) || !Array.isArray(f.root) || f.root.length!==2 || f.root.some(v=>!Number.isFinite(v)) || !Number.isFinite(f.scale) || f.scale<.015 || !Array.isArray(f.points) || f.points.length>500 || f.points.some(pt=>!pt || !Number.isFinite(pt.x) || !Number.isFinite(pt.y))) throw new Error('示例包含无效坐标或时间戳。');
         dimension ??= f.shape.length;
         if (f.shape.length!==dimension) throw new Error('示例的特征维度不一致，请重新录制。');
       }

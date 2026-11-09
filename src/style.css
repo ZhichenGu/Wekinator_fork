@@ -181,3 +181,16 @@ select{appearance:none;-webkit-appearance:none;padding-right:38px;background-ima
 .create-choices .method-tooltip b{font-size:14px;line-height:1.5;font-weight:600;color:#536879}
 .create-choices .method-tooltip p{font-size:13px;line-height:1.8;font-weight:400;margin:5px 0 0;color:#344454;white-space:normal;overflow:visible;text-overflow:clip;max-width:100%}
 .create-choices .method-tooltip>div+div{margin-top:18px}.learning-options .method-choice>button>strong{font-size:16px;line-height:1.4}.learning-options .method-choice>button>span{font-size:12px;line-height:1.5}.learning-options .method-choice>button>small{font-size:11px;line-height:1.5;color:#687888}
+
+.focus-controls details{margin-top:12px;font-size:12px}.focus-controls summary{cursor:pointer;color:#43586c}.focus-checks{display:grid;gap:6px;margin-top:10px;max-height:220px;overflow:auto}.focus-checks label{display:flex;gap:8px;align-items:center;font-size:12px}.focus-checks input{flex-shrink:0}
+/* Compact workspace header: identity, progress and actions share a baseline. */
+.studio .project-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:18px;padding:18px 0}
+.studio .project-toolbar>.workflow{padding:0;gap:8px;justify-content:center;flex-wrap:nowrap;font-size:11px}
+.studio .workflow>span{gap:5px;white-space:nowrap}.studio .workflow i{width:18px}.studio .workflow b{width:20px;height:20px;font-size:10px;flex-shrink:0}
+.studio .project-toolbar>.toolbar-actions{justify-content:flex-end}.studio .project-toolbar h1{max-width:240px}
+.capture-settings{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:18px 0 10px;padding:16px;background:#f5f7fa;border-radius:8px}
+.capture-settings .field.compact{margin:0;font-size:12px}.capture-settings .field select{margin-top:6px}.capture-duration{min-width:0}.capture-duration .setting-heading{margin:0 0 8px;font-size:12px}.capture-duration .decimal-input{max-width:86px}
+.capture-settings>.checkbox-label,.capture-settings>p{grid-column:1/-1;margin:0;font-size:12px;color:#687481}.capture-settings [hidden]{display:none!important}
+.feature-choices{display:grid;gap:6px;margin-top:14px}.feature-choices .method-choice>button{width:100%;text-align:left;display:flex;flex-direction:column;gap:3px;padding:10px 12px;border-radius:6px;background:#f1f4f8;color:#435365;border:0}.feature-choices .method-choice>button.chosen{background:#dce9f9;color:#254666}.feature-choices .method-choice strong{font-size:13px}.feature-choices .method-choice>button>span{font-size:11px;color:#687888}
+@media(max-width:1400px){.studio .workflow .step-label{display:none}.studio .workflow i{width:12px}.studio .project-toolbar{gap:12px}.studio .project-toolbar .save-state{display:none}}
+@media(max-width:900px){.studio .project-toolbar{display:flex;flex-wrap:wrap}.studio .project-toolbar>.workflow{order:3;flex-basis:100%;justify-content:flex-start;padding:4px 0}.studio .workflow .step-label{display:inline}.capture-settings{grid-template-columns:1fr}.studio .project-toolbar>div:first-child{flex-wrap:wrap}.studio .project-toolbar h1{max-width:180px}}
