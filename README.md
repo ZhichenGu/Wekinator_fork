@@ -56,6 +56,14 @@ npm start
 
 检查代码用 `npm test`。账号管理用 `npm run users`。项目使用 React、TypeScript、Vite、Node.js 和 MediaPipe；视觉与声音 API 需要 Node 服务，不能只部署静态文件。
 
+### 后续计划
+
+- 提供 macOS 和 Windows 下载版，通过 GitHub Releases 发布。安装后直接打开，不用自己安装 Node.js 或启动服务器。
+- 将动作模型和必要资源随软件提供，让动作追踪、训练和本地音量处理可以离线使用。DeepSeek、OpenAI、讯飞等 API 功能仍需联网，并使用自己的凭证与额度；MQTT 需要连接可访问的 Broker。
+- 桌面版沿用现有项目导入导出，逐步验证摄像头、麦克风、Serial 和 MQTT 在两个系统上的实际表现。
+
+桌面版目前是计划，尚未提供安装包。先把识别稳定性和日常操作做好，再发布可下载版本。
+
 ## English
 
 A small tool inspired by Wekinator, built for interactive experiments with a camera and microphone. Record examples to teach it gestures and poses, or use your own API credentials for image and audio recognition. Send results to Arduino, ESP32 or other software through Serial or MQTT.
@@ -96,4 +104,10 @@ Use Node.js 22.12 or later. Run `npm install`, then `npm run dev` and open the a
 
 Run checks with `npm test` and manage accounts with `npm run users`. Built with React, TypeScript, Vite, Node.js and MediaPipe. Image and audio API features need the Node server; static hosting alone is not enough.
 
-0.48：空格开始录制，再按空格保存，Esc 取消。录制列表最新在前；记录较多时可点击上下按钮查看。
+### Planned updates
+
+- macOS and Windows downloads through GitHub Releases, with no separate Node.js installation or server setup.
+- Bundle motion models and required resources for offline tracking, training and local volume processing. API features still need internet access and your own credentials and credit; MQTT needs a reachable broker.
+- Keep project import/export and test camera, microphone, Serial and MQTT on both systems.
+
+Desktop builds are planned; installers are not available yet. Recognition reliability and everyday use come first.
