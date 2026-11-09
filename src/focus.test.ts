@@ -26,7 +26,7 @@ test('changed focus persists, invalidates training, preserves data and can resto
  const changed=changeFocus(p,[13,14]);assert.equal(changed.actions[0].trained,false);assert.equal(p.actions[0].trained,true);assert.deepEqual(changed.actions[0].samples[0].frames[0].points,facial);
  assert.deepEqual(validateProject(JSON.parse(JSON.stringify(changed))).focus,[13,14]);
  assert.deepEqual(changeFocus(changed,undefined).actions[0].samples[0].frames[0].shape,base.shape);
- assert.throws(()=>changeFocus(p,[]));assert.throws(()=>validateProject({...p,focus:[1,1]}));assert.throws(()=>validateProject({...p,focus:[99]}));
+ assert.throws(()=>changeFocus(p,[]));assert.throws(()=>validateProject({...p,focus:[1,1]}));assert.throws(()=>validateProject({...p,focus:[478]}));
 });
 test('focused features feed dynamic templates, pose classification and continuous regression',()=>{
  const a=action('a',.2,0),b=action('b',.6,1),actions=[a,b];

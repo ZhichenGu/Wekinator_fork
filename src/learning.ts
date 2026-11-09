@@ -1,3 +1,4 @@
+import {labEnabled,buildLabTemplates,labMatch} from './lab-motion';
 import {buildTemplates,match,TriggerGate,type Action,type Frame,type Project,type Sample,type Template} from './core';
 export type LearningMode='dynamic'|'pose'|'continuous'|'region'|'relation';
 export const learningMode=(p:Project):LearningMode=>p.learning??'dynamic';
@@ -82,7 +83,7 @@ export class Recognizer{
   private result:RecognitionResult={scores:{},eventId:null,state:'waiting',labelId:null,locked:false};
   constructor(private project:Project,models?:{templates:Template[];prototypes:PosePrototype[]}){
     this.mode=learningMode(project);
-    this.templates=models?.templates??(this.mode==='dynamic'?buildTemplates(project.actions,project.feature):[]);
+    this.templates=models?.templates??(this.mode==='dynamic'?(labEnabled(project)?buildLabTemplates(project):buildTemplates(project.actions,project.feature)):[]);
     this.prototypes=models?.prototypes??(this.mode==='pose'?buildPosePrototypes(project.actions):[]);
     this.poseGate=new PoseGate((project.poseHoldSeconds??.35)*1000);
   }
@@ -103,7 +104,7 @@ export class Recognizer{
       const eventId=this.poseGate.update(scores,this.project.actions,now),labelId=winningAction(scores,this.project.actions);
       return this.result={scores,eventId,labelId,state:!labelId?'unknown':this.poseGate.activeId===labelId?'recognized':'confirming',locked:!!this.poseGate.activeId};
     }
-    const scores=match(this.buffer,this.templates,this.project.feature),eventId=this.dynamicGate.update(scores,this.project.actions,now);
+    const scores=labEnabled(this.project)?labMatch(this.buffer,this.templates,this.project):match(this.buffer,this.templates,this.project.feature),eventId=this.dynamicGate.update(scores,this.project.actions,now);
     return this.result={scores,eventId,state:this.dynamicGate.locked?'locked':'waiting',labelId:null,locked:this.dynamicGate.locked};
   }
 }

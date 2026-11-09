@@ -9,10 +9,18 @@ test('a 16:9 camera fits without stretching and narrow layouts use top/bottom ba
   const narrow=containBox(320,360,1920,1080);assert.deepEqual(narrow,{left:0,top:90,width:320,height:180});
 });
 
-test('floating preview appears when most of the camera leaves above, without flickering at the boundary',()=>{
- assert.equal(floatingPreviewVisible(.34,-200,false),true);
- assert.equal(floatingPreviewVisible(.4,-180,false),false);
- assert.equal(floatingPreviewVisible(.4,-180,true),true);
- assert.equal(floatingPreviewVisible(.5,-150,true),false);
+test('floating preview appears when one third leaves above, without flickering at the boundary',()=>{
+ assert.equal(floatingPreviewVisible(.66,-200,false),true);
+ assert.equal(floatingPreviewVisible(.68,-180,false),false);
+ assert.equal(floatingPreviewVisible(.70,-180,true),true);
+ assert.equal(floatingPreviewVisible(.75,-150,true),false);
  assert.equal(floatingPreviewVisible(.1,200,false),false);
+});
+
+test('effective camera visibility includes the sticky footer and fully scrolled-away frames',async()=>{
+ const {visiblePreviewRatio}=await import('./preview');
+ assert.equal(visiblePreviewRatio({top:-200,bottom:160,height:360},0,800),160/360);
+ assert.equal(visiblePreviewRatio({top:-200,bottom:160,height:360},0,100),100/360);
+ assert.equal(visiblePreviewRatio({top:-400,bottom:-40,height:360},0,800),0);
+ assert.equal(visiblePreviewRatio({top:100,bottom:460,height:360},0,800),1);
 });

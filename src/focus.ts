@@ -1,8 +1,8 @@
 import {extract,type Frame,type Mode,type Project,type Point} from './core';
-import {landmarkIds,validLandmark} from './region';
-export const recommendedPoints=(mode:Mode)=>mode==='pose'?[11,12,13,14,15,16,23,24,25,26,27,28]:landmarkIds(mode).sort((a,b)=>a-b);
-export const focusPresets=(mode:Mode)=>mode==='hand'?[{name:'整只手',ids:recommendedPoints(mode)},{name:'拇指与食指',ids:[0,1,2,3,4,5,6,7,8]}]:mode==='face'?[{name:'嘴部',ids:[13,14,61,291]},{name:'眼部',ids:[33,133,263,362]}]:[{name:'上半身',ids:[11,12,13,14,15,16,23,24]},{name:'手臂',ids:[11,12,13,14,15,16]}];
-export function validFocus(mode:Mode,ids:unknown):ids is number[]{return Array.isArray(ids)&&ids.length>=1&&ids.length<=33&&new Set(ids).size===ids.length&&ids.every(id=>validLandmark(mode,id))&&ids.every((id,i)=>!i||id>ids[i-1]);}
+import {FACE_CORE_POINTS,landmarkIds,validLandmark} from './region';
+export const recommendedPoints=(mode:Mode)=>mode==='pose'?[11,12,13,14,15,16,23,24,25,26,27,28]:mode==='face'?[...FACE_CORE_POINTS]:landmarkIds(mode).sort((a,b)=>a-b);
+export const focusPresets=(mode:Mode)=>mode==='hand'?[{name:'整只手',ids:recommendedPoints(mode)},{name:'拇指与食指',ids:[0,1,2,3,4,5,6,7,8]}]:mode==='face'?[{name:'嘴部',ids:[13,14,61,291]},{name:'眼睑',ids:[33,133,145,159,263,362,374,386]},{name:'眉部',ids:[46,52,53,55,65,70,105,107,276,282,283,285,295,300,334,336]}]:[{name:'上半身',ids:[11,12,13,14,15,16,23,24]},{name:'手臂',ids:[11,12,13,14,15,16]}];
+export function validFocus(mode:Mode,ids:unknown):ids is number[]{return Array.isArray(ids)&&ids.length>=1&&ids.length<=(mode==='face'?478:33)&&new Set(ids).size===ids.length&&ids.every(id=>validLandmark(mode,id))&&ids.every((id,i)=>!i||id>ids[i-1]);}
 /** Keep original landmarks and face coefficients; focus changes only the feature vector and trajectory center. */
 export function focusedFrame(mode:Mode,points:Point[],ids:number[],t:number,blend:number[]=[]):Frame|null{
  if(!validFocus(mode,ids))return null;
@@ -20,7 +20,7 @@ export function changeFocus(project:Project,focus:number[]|undefined):Project{
  if(focus!==undefined&&!validFocus(project.mode,focus))throw new Error('请至少选择一个有效骨骼点。');
  const actions=project.actions.map(action=>({...action,trained:false,samples:action.samples.map(sample=>({...sample,frames:sample.frames.map(frame=>{
   const next=focus?focusedFrame(project.mode,frame.points,focus,frame.t,frameBlend(frame)):extract(project.mode,frame.points,frameBlend(frame),frame.t);
-  if(!next)throw new Error('已有录制缺少所选部位的有效点，请保留当前设置或移除对应录制后再修改。');return next;
+  if(!next)throw new Error('已有录制缺少所选部位的有效点，请保留当前设置或移除对应录制后再修改。');return {...next,aspectRatio:frame.aspectRatio};
  })}))}));
  return {...project,focus,actions};
 }

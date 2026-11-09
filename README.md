@@ -24,7 +24,9 @@
 - **区域与停留**：选一个点，进入指定区域并停留后触发，无需训练。
 - **动作关系**：选两个点，判断距离或上下关系，无需训练。
 
-新建项目时，把鼠标放在处理方式上可以查看具体例子。动作学习可以选择「关注部位」的推荐组合，或直接点击骨骼点自定义；修改后需要重新训练。左侧动作名可双击或点击铅笔重命名。录制设置在动作列表上方；大画面滚出大半后会出现可拖动的小预览。
+新建项目时，把鼠标放在处理方式上可以查看具体例子。动作学习可以选择「关注部位」的推荐组合，或直接点击骨骼点自定义；修改后需要重新训练。左侧动作名可双击或点击铅笔重命名。录制设置在动作列表上方；大画面向上滚出约三分之一后会出现可拖动的小预览。
+
+动态动作可切换原版算法与实验增强，增强包含动作特征、起止切分和多示范匹配。切换后需重新训练，原始录制保留；用独立测试比较效果。面部新增嘴部、眼睑和眉部组合。视觉识别可选择送检区域，声音事件支持参考音频裁切，音量支持直接标定上下端点。
 
 ### 如何使用
 
@@ -76,7 +78,7 @@ Motion tracking offers five methods:
 - **Region and dwell**: choose one point and trigger when it stays in a region. No training needed.
 - **Pose relationships**: choose two points and check their distance or vertical order. No training needed.
 
-Hover over a method when creating a project to see examples. For motion learning, choose a focus preset or click landmarks to customize the points used. Retrain after changing them. Double-click an action name or click its pencil to rename it. Recording settings sit above the action list; a draggable preview appears after most of the camera view scrolls away.
+Hover over a method when creating a project to see examples. For motion learning, choose a focus preset or click landmarks to customize the points used. Retrain after changing them. Double-click an action name or click its pencil to rename it. Recording settings sit above the action list; a draggable preview appears after about one third of the camera view scrolls above the viewport.
 
 ### Getting started
 

@@ -1,6 +1,8 @@
+export const FACE_CORE_POINTS=[1,4,10,13,14,33,61,133,152,263,291,362];
+export const FACE_DETAIL_POINTS=[...new Set([...FACE_CORE_POINTS,7,46,52,53,55,63,65,66,70,105,107,145,153,154,155,157,158,159,160,161,163,246,249,276,282,283,285,293,295,296,300,334,336,373,374,380,381,382,384,385,386,387,388,390,398,466])].sort((a,b)=>a-b);
 import type {Mode,Point} from './core';
-export const landmarkIds=(mode:Mode)=>mode==='hand'?Array.from({length:21},(_,i)=>i):mode==='pose'?Array.from({length:33},(_,i)=>i):[1,4,33,133,263,362,61,291,13,14,152,10];
-export const validLandmark=(mode:Mode,id:number)=>landmarkIds(mode).includes(id);
+export const landmarkIds=(mode:Mode)=>mode==='hand'?Array.from({length:21},(_,i)=>i):mode==='pose'?Array.from({length:33},(_,i)=>i):Array.from({length:478},(_,i)=>i);
+export const validLandmark=(mode:Mode,id:number)=>Number.isInteger(id)&&id>=0&&id<(mode==='face'?478:mode==='hand'?21:33);
 export function trackedPoint(mode:Mode,points:Point[],id:number):[number,number]|null {
  const p=points[id];return !p||!Number.isFinite(p.x)||!Number.isFinite(p.y)||(mode==='pose'&&(p.visibility??1)<.45)?null:[1-p.x,p.y];
 }

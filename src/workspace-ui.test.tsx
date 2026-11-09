@@ -26,7 +26,7 @@ test('all three camera landmark types retain numbered keyboard selection in comp
  for(const [mode,count,selected] of [['hand',21,[8]],['face',478,[13]],['pose',33,[15]]] as const){
  const points=Array.from({length:count},()=>({x:.4,y:.4,visibility:1}));
  const html=renderToStaticMarkup(<PointPicker mode={mode} points={points} selected={[...selected]} compact onSelect={()=>{}}/>);
- assert.match(html,/fill="#dc3545"/);assert.match(html,/r="7"/);assert.match(html,/tabindex="0"/);assert.match(html,new RegExp('data-landmark-label="'+selected[0]+'"'));
+ assert.match(html,/fill="#dc3545"/);assert.match(html,mode==='face'?/r="4"/:/r="7"/);assert.match(html,/tabindex="0"/);assert.match(html,new RegExp('data-landmark-label="'+selected[0]+'"'));
  }
 });
 test('rename hint follows language without translating the user action name',()=>{

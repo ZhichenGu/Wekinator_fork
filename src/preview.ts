@@ -5,7 +5,12 @@ export function containBox(width:number,height:number,sourceWidth:number,sourceH
   return {left:(width-w)/2,top:(height-h)/2,width:w,height:h};
 }
 
-// Show after most of the main frame is above the viewport; hide once half returns.
+// Show once about one third leaves above; hide when three quarters returns.
 export function floatingPreviewVisible(ratio:number,top:number,previous:boolean){
-  return top<0&&ratio<(previous?.5:.35);
+  return top<0&&ratio<(previous?.75:2/3);
+}
+
+export function visiblePreviewRatio(rect:{top:number;bottom:number;height:number},visibleTop:number,visibleBottom:number){
+ if(rect.height<=0||visibleBottom<=visibleTop)return 0;
+ return Math.max(0,Math.min(rect.bottom,visibleBottom)-Math.max(rect.top,visibleTop))/rect.height;
 }
