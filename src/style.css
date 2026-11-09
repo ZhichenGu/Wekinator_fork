@@ -194,3 +194,39 @@ select{appearance:none;-webkit-appearance:none;padding-right:38px;background-ima
 .feature-choices{display:grid;gap:6px;margin-top:14px}.feature-choices .method-choice>button{width:100%;text-align:left;display:flex;flex-direction:column;gap:3px;padding:10px 12px;border-radius:6px;background:#f1f4f8;color:#435365;border:0}.feature-choices .method-choice>button.chosen{background:#dce9f9;color:#254666}.feature-choices .method-choice strong{font-size:13px}.feature-choices .method-choice>button>span{font-size:11px;color:#687888}
 @media(max-width:1400px){.studio .workflow .step-label{display:none}.studio .workflow i{width:12px}.studio .project-toolbar{gap:12px}.studio .project-toolbar .save-state{display:none}}
 @media(max-width:900px){.studio .project-toolbar{display:flex;flex-wrap:wrap}.studio .project-toolbar>.workflow{order:3;flex-basis:100%;justify-content:flex-start;padding:4px 0}.studio .workflow .step-label{display:inline}.capture-settings{grid-template-columns:1fr}.studio .project-toolbar>div:first-child{flex-wrap:wrap}.studio .project-toolbar h1{max-width:180px}}
+/* Shared camera tracking workspace layout. */
+.camera-layout .workspace{grid-template-columns:250px minmax(320px,1fr) 280px;align-items:start}
+.camera-layout .actions-panel{align-self:stretch;padding:20px 16px}
+.pilot-recording{padding-bottom:22px;margin-bottom:22px;border-bottom:1px solid #e5eaf0}
+.pilot-recording h2{font-size:16px;line-height:1.5;margin:0 0 16px}
+.pilot-recording .capture-settings{grid-template-columns:1fr;padding:0;margin:0;background:transparent;gap:16px}
+.pilot-recording .capture-settings .field.compact{font-size:12px}
+.pilot-recording .capture-settings>p{font-size:11px;line-height:1.6}
+.camera-layout .capture-bar{padding-top:18px;flex-wrap:wrap}
+.camera-layout .recording-shortcuts{margin-top:12px}
+.pilot-fold{border-top:1px solid #e5eaf0;padding-top:16px;margin-top:20px;min-width:0}
+.pilot-fold>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;font-size:15px;font-weight:600;list-style:none;min-height:32px;color:#273746}
+.pilot-fold>summary::-webkit-details-marker{display:none}.pilot-fold[open]>summary svg{transform:rotate(90deg)}
+.pilot-fold>div>.setting-section{border:0;margin-top:12px;padding-top:0}.pilot-fold>div>.setting-section>.setting-heading:first-child{display:none}
+.pilot-fold .setting-main{display:none}.pilot-fold .feature-choices{margin-top:10px}
+.floating-preview{position:fixed;z-index:40;width:280px;background:#fff;border:1px solid #dce3ec;border-radius:10px;overflow:hidden;box-shadow:0 8px 32px #182e4926}
+.preview-grip{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;font-size:12px;font-weight:600;background:#edf3fa;cursor:grab;touch-action:none;user-select:none}
+.preview-grip:active{cursor:grabbing}.mini-camera{position:relative;aspect-ratio:4/3;background:#111}.mini-camera canvas{width:100%;height:100%;object-fit:contain}.mini-content.mirrored canvas{transform:scaleX(-1)}
+.mini-status{display:flex;gap:9px;align-items:center;padding:10px 12px;font-size:12px}.mini-status .signal-light{width:12px;height:12px}
+@media(max-width:1100px){.camera-layout .workspace{grid-template-columns:220px minmax(290px,1fr)}.camera-layout .settings-panel{grid-column:1/-1;display:block}.camera-layout .pilot-fold{margin-top:14px}}
+@media(max-width:720px){.camera-layout .workspace{grid-template-columns:1fr}.camera-layout .actions-panel{padding:16px}.camera-layout .capture-settings{grid-template-columns:repeat(2,minmax(0,1fr))}.pilot-recording{padding-bottom:16px;margin-bottom:16px}.floating-preview{width:230px}.camera-layout .settings-panel{grid-column:1}}
+
+.mini-content{position:absolute;overflow:hidden}.mini-content canvas{display:block}
+
+/* Compact, readable explanations in both creation and workspace tooltips. */
+.method-tooltip,.create-choices .method-tooltip{padding:12px 14px;line-height:1.45}
+.method-tooltip>strong,.create-choices .method-tooltip>strong{font-size:14px;line-height:1.4;margin-bottom:9px}
+.method-tooltip b,.create-choices .method-tooltip b{font-size:11px;line-height:1.4}
+.method-tooltip p,.create-choices .method-tooltip p{font-size:12px!important;line-height:1.5!important;margin:3px 0 0!important}
+.method-tooltip>div+div,.create-choices .method-tooltip>div+div{margin-top:9px}
+.action-item .action-select{display:block;flex:1;min-width:0;padding:0;background:transparent;border:0;color:inherit;text-align:left;border-radius:3px}
+.action-item .action-rename{display:grid;place-items:center;flex:none;width:24px;height:28px;background:transparent;color:#61758b;border:0;border-radius:4px;padding:4px}
+.action-item .action-rename:hover{background:#ffffff80;color:#244a73}.action-item .action-rename:disabled{opacity:.35}
+.action-item .action-select:focus-visible,.action-item .action-rename:focus-visible{outline:2px solid #507eaf;outline-offset:2px}
+
+.method-tooltip b,.create-choices .method-tooltip b{color:#334155;font-weight:600}

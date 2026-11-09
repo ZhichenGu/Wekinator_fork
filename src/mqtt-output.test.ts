@@ -36,3 +36,11 @@ test('canceling lazy client initialization never connects the client',async()=>{
   const attempt=connection.connect(config,'',()=>{});connection.disconnect();ready(peer);
   await assert.rejects(attempt,/取消/);assert.equal(peer.connected,false);
 });
+
+test('a late connect event cannot revive a rejected MQTT connection',async()=>{
+ const peer=new FakePeer();peer.connect=()=>{peer.emit('error',new Error('denied'));};
+ const connection=new MqttConnection(async()=>peer);const states:string[]=[];
+ await assert.rejects(connection.connect(config,'',state=>states.push(state)),/denied/);
+ peer.connected=true;peer.emit('connect');assert.equal(connection.connected,false);assert.ok(!states.includes('connected'));
+ await assert.rejects(connection.send({topic:'project/action',payload:'YES',qos:1}),/未连接/);
+});

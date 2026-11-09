@@ -970,5 +970,10 @@
   "不是只看速度；手势形状仍会随时间参与动态匹配。": "This is not speed-only detection; shape changes over time still participate in dynamic matching.",
   "比较关注点中心的移动路径，不比较局部关节形状。": "Compare the movement path of the focus-point center, without comparing local joint shape.",
   "适合画圈、挥动等轨迹；未自定义关注部位时使用原有手腕、鼻尖或髋部中心。": "Useful for circles and waves. Without custom focus points, the original wrist, nose or hip center is used.",
-  "时间对齐允许一定快慢差异，因此它也不是速度检测器。": "Time alignment allows some speed variation, so this is not a speed detector either."
+  "时间对齐允许一定快慢差异，因此它也不是速度检测器。": "Time alignment allows some speed variation, so this is not a speed detector either.",
+  "录制设置": "Recording settings",
+  "浮动预览": "Floating preview",
+  "拖动预览窗口": "Drag preview window",
+  "重命名动作 {0}": "Rename action {0}",
+  "案例：ESP32-S3 · project/action · 纯数字。Wi-Fi 和 MQTT 配置在 .ino 中填写。": "Example: ESP32-S3 · project/action · plain numbers. Enter Wi-Fi and MQTT settings in the .ino file."
 }

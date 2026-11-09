@@ -51,7 +51,7 @@ export class MqttConnection {
       const fail=(message:string)=>{if(settled)return;settled=true;clearTimeout(timer);this.cancelOpen=null;this.connected=false;peer.end(true);reject(new Error(message));};
       const timer=setTimeout(()=>fail('MQTT 连接超时，请检查 WebSocket 地址、端口、路径和认证。'),12000);
       this.cancelOpen=()=>fail('连接已取消。');
-      peer.on('connect',()=>{if(gen!==this.generation)return;settled=true;clearTimeout(timer);this.cancelOpen=null;this.connected=true;onState('connected','MQTT 已连接。');resolve();});
+      peer.on('connect',()=>{if(gen!==this.generation||settled)return;settled=true;clearTimeout(timer);this.cancelOpen=null;this.connected=true;onState('connected','MQTT 已连接。');resolve();});
       peer.on('error',(error:Error)=>{if(gen!==this.generation)return;encounteredError=true;this.connected=false;onState('error',error.message||'MQTT 连接错误。');fail(error.message||'MQTT 连接错误。');peer.end(true);});
       peer.on('close',()=>{if(gen!==this.generation)return;this.connected=false;this.cancelSend?.();if(!settled)fail('MQTT 连接已关闭。');else onState(encounteredError?'error':'idle',encounteredError?'MQTT 连接异常，请检查后重新连接。':'MQTT 连接已断开，不会自动重发。');});
       peer.connect();
