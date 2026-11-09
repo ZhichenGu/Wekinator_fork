@@ -43,3 +43,13 @@ test('MQTT downloads match trigger versus continuous outputs',async()=>{
  assert.ok(html.includes(continuous?'value="{value}"':'value="YES"'));
  }
 });
+
+test('empty libraries offer category-specific creation while populated libraries keep project actions',async()=>{
+ const {ProjectLibrary}=await import('./ProjectLibrary');
+ for(const title of ['追踪项目','物体检测项目','声音项目']){
+ const html=renderToStaticMarkup(<ProjectLibrary title={title} empty="暂无项目" items={[]} onOpen={()=>{}} onRename={()=>{}} onDelete={()=>{}} onCreate={()=>{}}/>);
+ assert.match(html,/class="library-create"/);assert.ok(html.includes('aria-label="新建'+title+'"'));
+ }
+ const populated=renderToStaticMarkup(<ProjectLibrary title="追踪项目" empty="暂无项目" items={[{id:'1',name:'My wave',detail:'hand'}]} onOpen={()=>{}} onRename={()=>{}} onDelete={()=>{}} onCreate={()=>{}}/>);
+ assert.ok(!populated.includes('class="library-create"'));assert.match(populated,/My wave/);assert.match(populated,/重命名项目 My wave/);
+});

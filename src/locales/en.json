@@ -975,5 +975,6 @@
   "浮动预览": "Floating preview",
   "拖动预览窗口": "Drag preview window",
   "重命名动作 {0}": "Rename action {0}",
-  "案例：ESP32-S3 · project/action · 纯数字。Wi-Fi 和 MQTT 配置在 .ino 中填写。": "Example: ESP32-S3 · project/action · plain numbers. Enter Wi-Fi and MQTT settings in the .ino file."
+  "案例：ESP32-S3 · project/action · 纯数字。Wi-Fi 和 MQTT 配置在 .ino 中填写。": "Example: ESP32-S3 · project/action · plain numbers. Enter Wi-Fi and MQTT settings in the .ino file.",
+  "新建{0}": "Create {0}"
 }
