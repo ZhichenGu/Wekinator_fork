@@ -297,6 +297,7 @@ select{appearance:none;-webkit-appearance:none;padding-right:38px;background-ima
 .history-list{min-width:0}.history-navigation{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:30px;padding:4px 0;color:#64748b;font-size:11px}.history-navigation>div{display:flex;gap:8px;flex-wrap:wrap}.history-navigation button{display:inline-flex;align-items:center;gap:4px;background:#edf3fa;color:#365577;border-radius:4px;padding:3px 7px;font-size:11px;line-height:1.5}.history-viewport{max-height:260px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#9baec3 #eef2f6}.history-viewport::-webkit-scrollbar{width:8px}.history-viewport::-webkit-scrollbar-track{background:#eef2f6}.history-viewport::-webkit-scrollbar-thumb{background:#9baec3;border-radius:4px}.history-viewport:focus-visible{outline:2px solid #527fa8;outline-offset:2px}.history-viewport .sample-row:last-child{border-bottom:0}
 
 .home-links{display:flex;align-items:center;gap:4px}.home-links a{color:#344354;text-decoration:none}.home-links a:focus-visible{outline:2px solid #527fa8;outline-offset:3px}
+.personal-monogram{font:700 17px/1 Arial, sans-serif;letter-spacing:-1px}
 
 .evaluation-issues {margin:12px 0;padding:12px 14px;border:1px solid #e1e5ea;border-radius:8px}
 .evaluation-issues summary {cursor:pointer;font-weight:600}

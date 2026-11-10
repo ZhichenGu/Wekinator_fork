@@ -34,7 +34,7 @@ import {FocusControls} from './FocusControls';
 import {changeFocus,focusedFrame,frameBlend,recommendedPoints} from './focus';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Camera, Hand, ScanFace, PersonStanding, Plus, Play, Square, Circle, ArrowRight, ArrowLeft, Download, FolderOpen, Check, Layers, Sparkles, Settings2, Trash2, Video, X, ChevronRight, RotateCcw, Activity, AlertCircle, Pencil, Github, ContactRound } from 'lucide-react';
+import { Camera, Hand, ScanFace, PersonStanding, Plus, Play, Square, Circle, ArrowRight, ArrowLeft, Download, FolderOpen, Check, Layers, Sparkles, Settings2, Trash2, Video, X, ChevronRight, RotateCcw, Activity, AlertCircle, Pencil, Github } from 'lucide-react';
 import { appendSample, MAX_SAMPLES_PER_ACTION, buildTemplates, energy, extract, sequence, validateProject, type Action, type Frame, type Mode, type Project, type Sample, type Point } from './core';
 import { deleteProject, listProjects, loadProject, saveProject } from './storage';
 import { SerialPanel, useSerialOutput } from './SerialPanel';
@@ -420,7 +420,7 @@ function App() {
     <header className="topbar"><button className="brand" onClick={()=>{cancelEvaluation();stopCamera();void serial.disconnect();mqtt.reset();setPage('home');}} aria-label={t("返回首页")}><span className="brand-mark"><Activity size={21}/></span><strong>Platform</strong></button><div className="top-right">{page==='home'&&(
       <div className="home-links">
         <a className="icon-button" href="https://github.com/ZhichenGu/Wekinator_fork" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub"><Github size={20} aria-hidden="true"/></a>
-        <a className="icon-button" href="https://zhichengu.onrender.com/" target="_blank" rel="noopener noreferrer" aria-label={t("Zhichen Gu 的个人网站")} title={t("Zhichen Gu 的个人网站")}><ContactRound size={20} aria-hidden="true"/></a>
+        <a className="icon-button" href="https://zhichengu.onrender.com/" target="_blank" rel="noopener noreferrer" aria-label={t("Zhichen Gu 的个人网站")} title={t("Zhichen Gu 的个人网站")}><span className="personal-monogram" aria-hidden="true">ZG</span></a>
       </div>
     )}<LanguageSwitch/><span className="local-badge"><span/>{page==='objects'?t("云端 API"):t("本地运行")}</span><span className="version">{t("版本")} {PREVIEW_VERSION}</span><form method="post" action="/auth/logout" onSubmit={()=>{window.dispatchEvent(new Event('motion-stop'));cancelEvaluation();stopCamera();void serial.disconnect();mqtt.reset();}}><button className="text-button" type="submit">{t("退出")}</button></form></div></header>
     {notice&&<div className="notice" role="status"><AlertCircle size={17}/><span>{messageT(notice)}</span><button className="icon-button" onClick={()=>setNotice('')} aria-label={t("关闭提示")}><X size={16}/></button></div>}
