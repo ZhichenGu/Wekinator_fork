@@ -11,10 +11,10 @@
 | 版本 | 入口与状态 |
 | --- | --- |
 | 网页版 | **[打开 Platform](https://ml-play.onrender.com/)**。无需安装，点击「访客进入」即可开始，右上角可切换中英文。 |
-| macOS | 0.75 桌面测试版面向 Apple Silicon（M 系列）。安装文件为 `Platform-0.75.0-macOS-arm64.dmg`，打开后将 Platform 拖入「应用程序」。当前仅本地构建。 |
-| Windows | 0.75 桌面测试版安装文件为 `Platform-0.75.0-Windows-x64-Setup.exe`，面向 Intel/AMD 64 位电脑。已校验包内文件。Mac 兼容环境安装未通过，Windows 10、11 待真机验证。当前仅本地构建。 |
+| macOS | [下载 Apple Silicon 测试版（DMG）](https://github.com/ZhichenGu/ml-play/releases/download/v0.75.0/Platform-0.75.0-macOS-arm64.dmg)。打开后将 Platform 拖入「应用程序」。已在 macOS 15.7.5 测试，尚未经过 Apple 公证。 |
+| Windows | [下载 Intel/AMD 64 位测试版（EXE）](https://github.com/ZhichenGu/ml-play/releases/download/v0.75.0/Platform-0.75.0-Windows-x64-Setup.exe)。安装包未签名，Windows 10 和 11 的真机安装与设备权限待测。 |
 
-[GitHub Releases：查看版本记录和安装包](https://github.com/ZhichenGu/ml-play/releases)。发布后请在对应版本的 **Assets** 下载；GitHub 自动生成的 **Source code (zip / tar.gz)** 是源码，不是安装包。
+[查看 v0.75.0 预发布说明和校验文件](https://github.com/ZhichenGu/ml-play/releases/tag/v0.75.0)。
 
 ### 可以做什么
 
@@ -85,10 +85,10 @@ A small tool inspired by Wekinator, built for interactive experiments with a cam
 | Edition | Availability |
 | --- | --- |
 | Web | **[Open Platform](https://ml-play.onrender.com/)** and choose **Continue as guest**. No installation required. Switch languages in the top-right corner. |
-| macOS | The 0.75 desktop test build targets Apple Silicon (M-series). Open `Platform-0.75.0-macOS-arm64.dmg` and drag Platform into Applications. Currently built locally. |
-| Windows | The 0.75 desktop test installer is `Platform-0.75.0-Windows-x64-Setup.exe` for Intel/AMD 64-bit PCs. Payload integrity checked. Installation in CrossOver did not complete. Windows 10 and 11 tests on real PCs are pending. Local build only. |
+| macOS | [Download the Apple Silicon preview (DMG)](https://github.com/ZhichenGu/ml-play/releases/download/v0.75.0/Platform-0.75.0-macOS-arm64.dmg). Open it and drag Platform into Applications. Tested on macOS 15.7.5. This build has not been notarized by Apple. |
+| Windows | [Download the Intel/AMD x64 preview (EXE)](https://github.com/ZhichenGu/ml-play/releases/download/v0.75.0/Platform-0.75.0-Windows-x64-Setup.exe). The installer is unsigned. Installation and device access on Windows 10 and 11 are awaiting real-device tests. |
 
-[GitHub Releases: version notes and installers](https://github.com/ZhichenGu/ml-play/releases). When desktop editions ship, look under **Assets**. GitHub’s **Source code (zip / tar.gz)** archives are for developers; they are not installers.
+[Read the v0.75.0 preview notes and find the checksums](https://github.com/ZhichenGu/ml-play/releases/tag/v0.75.0).
 
 ### What it does
 
