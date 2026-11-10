@@ -8,7 +8,7 @@ import {createReadStream} from 'node:fs';
 import {createAccessGate} from './access.mjs';
 const dist=fileURLToPath(new URL('../dist/',import.meta.url));
 const gate=createAccessGate();
-const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.wasm':'application/wasm','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg'};
+const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.wasm':'application/wasm','.svg':'image/svg+xml','.png':'image/png','.mp4':'video/mp4','.jpg':'image/jpeg'};
 const api=createObjectApi(),audioApi=createAudioApi();
 const server=http.createServer((req,res)=>void gate(req,res,()=>void api(req,res,()=>void audioApi(req,res,()=>void serve(req,res)))).catch(()=>{if(!res.headersSent)res.writeHead(500);res.end('服务器错误。');}));
 async function serve(req,res){

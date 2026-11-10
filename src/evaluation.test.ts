@@ -40,3 +40,16 @@ test('held-out dynamic action and partial-motion negative use the same streaming
   const result=evaluateProject({schemaVersion:1,name:'动态独立验证',mode:'hand',feature:'both',learning:'dynamic',actions:[a],updatedAt:''});
   assert.equal(result.positiveCorrect,1);assert.equal(result.negativeCorrect,1);assert.equal(result.falseTriggers,0);
 });
+
+test('a test round scores only its new clips using the existing trained model',()=>{
+ const a=action('a',0),b=action('b',1);
+ a.samples.push(sample('legacy',.02,.008,'test'),{...sample('older',.03,.01,'test'),testRound:1},
+   {...sample('miss',3.02,.006,'test'),testRound:2},
+   {...sample('everyday',1.02,.007,'test',true),testRound:2});
+ const p:Project={schemaVersion:1,name:'Sessions',mode:'hand',feature:'shape',learning:'pose',actions:[a,b],updatedAt:''};
+ const result=evaluateProject(p,undefined,2);
+ assert.deepEqual(result.trials.map(trial=>trial.sampleId),['miss','everyday']);
+ assert.equal(result.testRound,2);assert.equal(result.perAction[0].missed,1);
+ assert.equal(result.falseTriggers,1);assert.equal(result.trials[1].events[0].id,'b');
+ assert.equal(evaluateProject(p).total,4);
+});

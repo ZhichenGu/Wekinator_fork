@@ -2,7 +2,10 @@ import type {Action,Sample} from './core';import {recordingQuality} from './reco
 export function trimSample(sample:Sample,startMs:number,endMs:number):Sample{
  if(!Number.isFinite(startMs)||!Number.isFinite(endMs)||startMs<0||endMs>sample.duration+.01||endMs<=startMs)throw new Error('请设置有效的裁剪起点和终点。');
  const frames=sample.frames.filter(f=>f.t>=startMs&&f.t<=endMs);const quality=recordingQuality(frames,endMs-startMs);if(!quality.valid)throw new Error(quality.message);
- const first=frames[0].t;return {...sample,frames:frames.map(f=>({...f,t:f.t-first})),duration:quality.duration};
+ const first=frames[0].t;
+ const offset=sample.frames.indexOf(frames[0]);
+ const lostBefore=sample.lostBefore?.filter(i=>(i>offset||(i===0&&startMs===0))&&(i<offset+frames.length||(i===sample.frames.length&&endMs===sample.duration))).map(i=>i-offset);
+ return {...sample,lostBefore,frames:frames.map(f=>({...f,t:f.t-first})),duration:quality.duration};
 }
 export function editableKeyTarget(target:EventTarget|null){return typeof Element!=='undefined'&&target instanceof Element&&!!target.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"]),dialog');}
 

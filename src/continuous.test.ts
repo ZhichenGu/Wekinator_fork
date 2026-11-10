@@ -5,3 +5,18 @@ test('regression learns endpoint and intermediate values from steady labeled exa
 test('training excludes held-out, negative, unstable and untrained samples; conflicts reject',()=>{assert.throws(()=>buildAnchors([action(0,0)]));assert.throws(()=>buildAnchors([action(0,0),action(1,0)]));assert.throws(()=>buildAnchors([action(0,0),{...action(1,1),trained:false}]));for(const sample of [{...action(1,1).samples[0],split:'test' as const},{...action(1,1).samples[0],negative:true},{...action(1,1).samples[0],frames:Array.from({length:21},(_,i)=>frame(i,i*50))}])assert.throws(()=>buildAnchors([action(0,0),{...action(1,1),samples:[sample]}]));});
 test('continuous values smooth, throttle to 10 Hz, heartbeat, pause on loss and recover',()=>{const c=new ContinuousController(buildAnchors([action(0,0),action(1,1)]));assert.deepEqual(c.step(frame(0),0),{value:0,emit:true});assert.equal(c.step(frame(1),50).emit,false);const changing=c.step(frame(1),100);assert.ok(changing.value!>0&&changing.value!<1);assert.equal(changing.emit,true);assert.deepEqual(c.step(null,200),{value:null,emit:false});assert.deepEqual(c.step(frame(1),400),{value:1,emit:true});assert.equal(c.step(frame(1),500).emit,false);assert.equal(c.step(frame(1),1400).emit,true);assert.deepEqual(c.step(frame(9),1500),{value:null,emit:false});});
 test('numeric output uses explicit placeholder or only a number, and project preserves labels',()=>{assert.equal(valueMessage('/brightness/{value}',.42),'/brightness/0.420');assert.equal(valueMessage('YES',.42),'0.420');assert.equal(valueMessage('{value},{value}',0),'0.000,0.000');const project={schemaVersion:1,name:'Numeric',mode:'hand',feature:'shape',learning:'continuous',actions:[action(0,0),action(1,1)],updatedAt:'now'};assert.equal(validateProject(JSON.parse(JSON.stringify(project))).actions[1].controlValue,1);assert.throws(()=>validateProject({...project,actions:[{...action(0,0),controlValue:2}]}));});
+
+import {checkContinuous} from './continuous-check';
+test('value checks keep the captured target, separate rounds and count lost and rejected frames',()=>{
+ const a=action(0,0), b=action(1,1);
+ const clip={...a.samples[0],id:'half',split:'test' as const,testRound:2,testValue:.5,lostBefore:[0,1,21],
+   frames:Array.from({length:21},(_,i)=>frame(i===20?8:.5,i*50))};
+ a.samples.push(clip,{...clip,id:'copy'},{...clip,id:'leak',frames:b.samples[0].frames},
+   {...clip,id:'outside',frames:clip.frames.map(f=>frame(8,f.t))},{...clip,id:'older',testRound:1});
+ const p=validateProject({schemaVersion:1,name:'Check',mode:'hand',feature:'shape',learning:'continuous',actions:[a,b],updatedAt:''});
+ const [half,copy,leak,outside,...others]=checkContinuous(p,undefined,2).trials;
+ assert.deepEqual([half.target,half.median,half.error,half.spread,half.valid,half.total],[.5,.5,0,0,20,24]);
+ assert.equal(copy.excluded,'testCopy');assert.equal(leak.excluded,'trainingCopy');
+ assert.deepEqual([outside.valid,outside.median,outside.error],[0,null,null]);assert.deepEqual(others,[]);
+ assert.throws(()=>validateProject({...p,actions:[{...a,samples:[{...clip,lostBefore:[22]}]},b]}));
+});

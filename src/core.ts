@@ -7,7 +7,7 @@ export type FeatureMode = 'shape' | 'path' | 'both';
 export type Point = { x: number; y: number; z?: number; visibility?: number };
 export type Frame = { aspectRatio?:number; blend?:number[]; t: number; points: Point[]; shape: number[]; root: [number, number]; scale: number };
 export const MAX_SAMPLES_PER_ACTION = 100;
-export type Sample = { id: string; frames: Frame[]; duration: number; negative: boolean; split?: 'train'|'test'; aspectRatio?: number };
+export type Sample = { id: string; frames: Frame[]; duration: number; negative: boolean; split?: 'train'|'test'; testRound?:number; testValue?:number; lostBefore?:number[]; aspectRatio?: number };
 export type Action = { id: string; name: string; effect: 'indicator' | 'serial' | 'mqtt'; serial?: SerialMessage; mqtt?: MqttMessage; color: string; samples: Sample[]; trained: boolean; threshold: number; controlValue?:number };
 export type Project = { labBaseline?:boolean; lab?:{features:boolean;trim:boolean;ensemble:boolean}; id?:string; schemaVersion: 1; name: string; mode: Mode; feature: FeatureMode; focus?:number[]; learning?: 'dynamic'|'pose'|'continuous'|'region'|'relation'; relation?:RelationConfig; region?:RegionConfig; poseHoldSeconds?: number; actions: Action[]; mqtt?: BrokerConfig; serialBaudRate?: number; recordingDuration?: number; recordingDelay?: 0|1|3; updatedAt: string };
 export type Template = { actionId: string; duration: number; sequence: number[][]; energy: number; negative: boolean };
@@ -175,6 +175,9 @@ export function validateProject(data: unknown): Project {
       if (!s || typeof s.id!=='string' || typeof s.negative!=='boolean' || !Number.isFinite(s.duration) || s.duration<500 || s.duration>7000 || !Array.isArray(s.frames) || s.frames.length<5 || s.frames.length>300) throw new Error('示例长度无效。');
       if(sampleIds.has(s.id))throw new Error('录制 ID 重复。');sampleIds.add(s.id);
       if(s.split!==undefined&&!['train','test'].includes(s.split))throw new Error('录制用途无效。');
+      if(s.testRound!==undefined&&(s.split!=='test'||!Number.isSafeInteger(s.testRound)||s.testRound<1||s.testRound>1000000))throw new Error('测试轮次无效。');
+      if(s.testValue!==undefined&&(p.learning!=='continuous'||s.split!=='test'||!Number.isFinite(s.testValue)||s.testValue<0||s.testValue>1))throw new Error('测试目标数值无效。');
+      if(s.lostBefore!==undefined&&(s.testValue===undefined||!Array.isArray(s.lostBefore)||s.lostBefore.length>300||s.lostBefore.some((n,i)=>!Number.isInteger(n)||n<0||n>s.frames.length||(i>0&&n<s.lostBefore![i-1]))))throw new Error('丢失采样记录无效。');
       if(s.aspectRatio!==undefined&&(!Number.isFinite(s.aspectRatio)||s.aspectRatio<.1||s.aspectRatio>10))throw new Error('示例画面比例无效。');
       for (const [i,f] of s.frames.entries()) {
         if (!f || (f.blend!==undefined&&(!Array.isArray(f.blend)||f.blend.length>100||f.blend.some(v=>!Number.isFinite(v)))) || !Number.isFinite(f.t) || (i>0 && f.t<=s.frames[i-1].t) || !Array.isArray(f.shape) || f.shape.length<2 || f.shape.length>(p.mode==='face'?956:200) || f.shape.some(v=>!Number.isFinite(v)) || !Array.isArray(f.root) || f.root.length!==2 || f.root.some(v=>!Number.isFinite(v)) || !Number.isFinite(f.scale) || f.scale<.015 || !Array.isArray(f.points) || f.points.length>500 || f.points.some(pt=>!pt || !Number.isFinite(pt.x) || !Number.isFinite(pt.y))) throw new Error('示例包含无效坐标或时间戳。');
