@@ -1,3 +1,4 @@
+import {cleanOscTarget,type OscTarget} from './osc';
 import {validRelation,type RelationConfig} from './relation';
 import {validRegion,validLandmark,type RegionConfig} from './region';
 import { validateBroker, validateMqttMessage, type BrokerConfig, type MqttMessage } from './mqtt-output';
@@ -8,7 +9,7 @@ export type Point = { x: number; y: number; z?: number; visibility?: number };
 export type Frame = { aspectRatio?:number; blend?:number[]; t: number; points: Point[]; shape: number[]; root: [number, number]; scale: number };
 export const MAX_SAMPLES_PER_ACTION = 100;
 export type Sample = { id: string; frames: Frame[]; duration: number; negative: boolean; split?: 'train'|'test'; testRound?:number; testValue?:number; lostBefore?:number[]; aspectRatio?: number };
-export type Action = { id: string; name: string; effect: 'indicator' | 'serial' | 'mqtt'; serial?: SerialMessage; mqtt?: MqttMessage; color: string; samples: Sample[]; trained: boolean; threshold: number; controlValue?:number };
+export type Action = { id: string; name: string; osc?:OscTarget; effect: 'indicator' | 'serial' | 'mqtt' | 'osc'; serial?: SerialMessage; mqtt?: MqttMessage; color: string; samples: Sample[]; trained: boolean; threshold: number; controlValue?:number };
 export type Project = { labBaseline?:boolean; lab?:{features:boolean;trim:boolean;ensemble:boolean}; id?:string; schemaVersion: 1; name: string; mode: Mode; feature: FeatureMode; focus?:number[]; learning?: 'dynamic'|'pose'|'continuous'|'region'|'relation'; relation?:RelationConfig; region?:RegionConfig; poseHoldSeconds?: number; actions: Action[]; mqtt?: BrokerConfig; serialBaudRate?: number; recordingDuration?: number; recordingDelay?: 0|1|3; updatedAt: string };
 export type Template = { actionId: string; duration: number; sequence: number[][]; energy: number; negative: boolean };
 
@@ -164,10 +165,11 @@ export function validateProject(data: unknown): Project {
   if(p.mqtt!==undefined){if(!p.mqtt||typeof p.mqtt.url!=='string'||typeof p.mqtt.username!=='string'||typeof p.mqtt.clientId!=='string'||typeof p.mqtt.passwordRequired!=='boolean')throw new Error('MQTT 连接配置无效。');p.mqtt=validateBroker(p.mqtt);}
   const ids = new Set<string>();
   for (const a of p.actions) {
-    if (!a || typeof a.id!=='string' || ids.has(a.id) || typeof a.name!=='string' || !a.name.trim() || a.name.length>60 || !['indicator','serial','mqtt','scene','pulse'].includes(a.effect) || !/^#[0-9a-f]{6}$/i.test(a.color) || typeof a.trained!=='boolean' || !Number.isFinite(a.threshold) || a.threshold<.5 || a.threshold>.98 || !Array.isArray(a.samples) || a.samples.length>MAX_SAMPLES_PER_ACTION) throw new Error('动作数据不完整或超过限制。');
+    if (!a || typeof a.id!=='string' || ids.has(a.id) || typeof a.name!=='string' || !a.name.trim() || a.name.length>60 || !['indicator','serial','mqtt','osc','scene','pulse'].includes(a.effect) || !/^#[0-9a-f]{6}$/i.test(a.color) || typeof a.trained!=='boolean' || !Number.isFinite(a.threshold) || a.threshold<.5 || a.threshold>.98 || !Array.isArray(a.samples) || a.samples.length>MAX_SAMPLES_PER_ACTION) throw new Error('动作数据不完整或超过限制。');
     if(a.controlValue!==undefined&&(!Number.isFinite(a.controlValue)||a.controlValue<0||a.controlValue>1))throw new Error('目标数值须在 0 到 1 之间。');
     if(a.serial!==undefined&&(!a.serial||typeof a.serial.text!=='string'||a.serial.text.length>512||!['none','lf','crlf'].includes(a.serial.lineEnding)))throw new Error('串口发送配置无效。');
     if(['scene','pulse'].includes(a.effect))a.effect='indicator';
+    if(a.osc!==undefined)a.osc=cleanOscTarget(a.osc);
     if(a.mqtt!==undefined)validateMqttMessage(a.mqtt);
     ids.add(a.id);
     let dimension: number | null = null;const sampleIds=new Set<string>();

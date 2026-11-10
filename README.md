@@ -4,7 +4,7 @@
 
 ## 中文
 
-一个受 Wekinator 启发的小工具，用摄像头和麦克风做交互实验。可以录下动作示范，让它学习识别，也可以接入自己的 API 做图像和声音识别。结果通过 Serial 或 MQTT 发给 Arduino、ESP32 或其他程序。
+一个受 Wekinator 启发的小工具，用摄像头和麦克风做交互实验。可以录下动作示范，让它学习识别，也可以接入自己的 API 做图像和声音识别。结果通过 Serial、MQTT 或 OSC 发给 Arduino、ESP32 或其他程序。
 
 [打开网站](https://wekinator-fork.onrender.com/) → 点击「访客进入」，或使用账号登录。右上角可以切换中英文。
 
@@ -32,9 +32,15 @@
 
 1. 新建项目，选择输入和处理方式。
 2. 动作学习先录制示范、再训练；区域与动作关系直接设置规则。视觉和声音 API 使用者需填写自己的凭证。
-3. 选择状态灯、Serial 或 MQTT，测试后开始运行。
+3. 选择状态灯、Serial、MQTT 或 OSC，测试后开始运行。
 
-Serial 用 USB 连接设备，建议使用桌面 Chrome 或 Edge。MQTT 在网页中填写 Broker 的 WebSocket 地址，HTTPS 网站使用 `wss://`。首页有连接教程和 Arduino / ESP32-S3 案例下载。OSC 规划中。
+Serial 用 USB 连接设备，建议使用桌面 Chrome 或 Edge。MQTT 在网页中填写 Broker 的 WebSocket 地址，HTTPS 网站使用 `wss://`。首页有连接教程和 Arduino / ESP32-S3 案例下载。
+
+### OSC 接收
+
+在浏览器所在电脑安装 Node.js 22，在下载目录运行 `node platform_osc_bridge.mjs`。首页「教程与示例 → 案例代码」提供[本机桥接](public/examples/platform_osc_bridge.mjs)和 [Max 接收案例](public/examples/osc_receiver.maxpat)。Processing 可用 oscP5，openFrameworks 可用 ofxOsc。
+
+按 P 选择 OSC 输出，填写接收端 IP（同机 `127.0.0.1`，跨设备填私有 IPv4）、UDP 监听端口（默认 9000）和 OSC 地址。触发默认向 `/platform/trigger` 发送文本，连续数值向 `/platform/value` 发送 float。点「应用目标」并测试，按浏览器提示允许本地网络访问，在接收软件中确认收到。
 
 项目保存在当前浏览器，可导出备份，不会跟随账号同步。API Key 和 MQTT 密码不写入项目。动作追踪在本机处理；API 识别会把提交的图片或音频经网站服务发给所选平台，使用你自己的额度。
 
@@ -66,7 +72,7 @@ npm start
 
 ## English
 
-A small tool inspired by Wekinator, built for interactive experiments with a camera and microphone. Record examples to teach it gestures and poses, or use your own API credentials for image and audio recognition. Send results to Arduino, ESP32 or other software through Serial or MQTT.
+A small tool inspired by Wekinator, built for interactive experiments with a camera and microphone. Record examples to teach it gestures and poses, or use your own API credentials for image and audio recognition. Send results to Arduino, ESP32 or other software through Serial, MQTT or OSC.
 
 [Open the website](https://wekinator-fork.onrender.com/) → choose **Continue as guest**, or sign in. Switch languages in the top-right corner.
 
@@ -92,9 +98,15 @@ Hover over a method when creating a project to see examples. For motion learning
 
 1. Create a project and choose an input and processing method.
 2. Record and train for gesture or pose learning, or set rules for regions and relationships. API recognition needs your own credentials.
-3. Choose a status light, Serial or MQTT output, test it, then start.
+3. Choose a status light, Serial, MQTT or OSC output, test it, then start.
 
-For Serial, connect your device over USB and use desktop Chrome or Edge. For MQTT, enter the broker’s WebSocket address; HTTPS sites require `wss://`. The home page includes connection guides and Arduino / ESP32-S3 example downloads. OSC is planned.
+For Serial, connect your device over USB and use desktop Chrome or Edge. For MQTT, enter the broker’s WebSocket address; HTTPS sites require `wss://`. The home page includes connection guides and Arduino / ESP32-S3 example downloads.
+
+### Receiving OSC
+
+On the browser computer install Node.js 22 and run `node platform_osc_bridge.mjs` from the downloads folder. Get the [bridge](public/examples/platform_osc_bridge.mjs) and [Max patch](public/examples/osc_receiver.maxpat) from Learn & Connect → Example code. Use oscP5 in Processing or ofxOsc in openFrameworks.
+
+Press P, select OSC, and enter the receiver IP (127.0.0.1 on the same machine, or a private IPv4 on the LAN), UDP port (default 9000), and OSC address. Triggers send strings to `/platform/trigger` and continuous controls send floats to `/platform/value`. Apply the target, test send, allow local network access if prompted, and check the receiver.
 
 Projects stay in the current browser. Export them for backup; signing in does not sync them. API keys and MQTT passwords are not included in project files. Motion tracking runs locally. API recognition sends submitted images or audio through the website’s server to your chosen provider and uses your own API credit.
 
