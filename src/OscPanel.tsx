@@ -2,17 +2,20 @@ import React,{useState} from 'react';
 import {defaultOscTarget,cleanOscTarget,oscArgument,type OscType,type OscTarget} from './osc';
 import {t} from './i18n';
 
+const desktop = import.meta.env?.MODE === 'desktop';
+
 export async function sendOsc(value:string|number,target:OscTarget=defaultOscTarget(typeof value==='number'),positive=true) {
   try {
     const argument=oscArgument(value,target,positive);
     const path=argument.type==='integer'?'osc/int32':'osc';
-    const res=await fetch('http://127.0.0.1:8765/'+path,{
+    const res=await fetch((desktop ? '/api/desktop/' : 'http://127.0.0.1:8765/')+path,{
       method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({host:target.host,port:target.port,address:target.address,value:argument.value}),
       credentials:'omit', redirect:'error', signal:AbortSignal.timeout(10000)
     });
     if(path==='osc/int32'&&res.status===404) throw new RangeError();
     if(res.status!==204) throw Error();
   } catch (error) {
+    if(desktop) throw Error(t('OSC 发送失败，请检查接收端地址和端口。'));
     if(error instanceof RangeError) throw Error(t('请重新下载并启动支持整数的 OSC 桥接。'));
     throw Error(t('OSC 发送失败，请启动本机桥接并允许浏览器访问本地网络。'));
   }
@@ -40,7 +43,7 @@ export function OscPanel({continuous=false,target,onSave,disabled,onTest,yesText
     catch{setError(true);}
   }
   return <div className="setting-section">
-    <p>{t('在浏览器所在电脑运行桥接程序，接收软件监听下方 UDP 端口。')}</p>
+    <p>{t(desktop ? '在接收软件中监听下方 UDP 端口。' : '在浏览器所在电脑运行桥接程序，接收软件监听下方 UDP 端口。')}</p>
     <label className="field compact">{t('接收端 IPv4')}<input value={host} onChange={e=>setHost(e.target.value)} disabled={disabled}/></label>
     <label className="field compact">{t('UDP 端口')}<input type="number" min="1" max="65535" value={port} onChange={e=>setPort(e.target.value)} disabled={disabled}/></label>
     <label className="field compact">{t('OSC 地址')}<input value={address} maxLength={160} onChange={e=>setAddress(e.target.value)} disabled={disabled}/></label>
@@ -53,10 +56,10 @@ export function OscPanel({continuous=false,target,onSave,disabled,onTest,yesText
     </>}
     {dirty&&<><button type="button" className="secondary small" disabled={disabled} onClick={save}>{t('应用目标')}</button><p>{t('当前发送目标')} <code>{saved.host}:{saved.port} {saved.address}</code></p></>}
     {dirty&&error&&<p role="alert">{t('请检查 IP、端口、路径及发送值。整数须在 int32 范围内，浮点数须是有限数值。')}</p>}
-    <p><code>node platform_osc_bridge.mjs</code></p>
+    {!desktop && <p><code>node platform_osc_bridge.mjs</code></p>}
     <div className="osc-actions">
       <button className="secondary small" type="button" disabled={disabled||dirty} onClick={onTest}>{t('测试发送')}</button>
-      <a href={(import.meta.env?.BASE_URL??'/')+'examples/platform_osc_bridge.mjs'} download>{t('下载 OSC 桥接')}</a>
+      {!desktop && <a href={(import.meta.env?.BASE_URL??'/')+'examples/platform_osc_bridge.mjs'} download>{t('下载 OSC 桥接')}</a>}
     </div>
   </div>;
 }

@@ -1,0 +1,29 @@
+appId: com.zhichengu.platform
+productName: Platform
+electronVersion: 45.2.3
+directories:
+  app: stage
+  output: out
+files:
+  - main.mjs
+  - server/*.mjs
+  - dist/**/*
+npmRebuild: false
+mac:
+  icon: build/icon.icns
+  entitlements: build/entitlements.plist
+  entitlementsInherit: build/entitlements.plist
+  category: public.app-category.education
+  target: dmg
+  extendInfo:
+    NSCameraUsageDescription: Platform uses the camera for motion tracking and visual interaction.
+    NSMicrophoneUsageDescription: Platform uses the microphone for audio recognition and volume control.
+  artifactName: Platform-${version}-macOS-${arch}.${ext}
+win:
+  icon: build/icon.ico
+  target: nsis
+  artifactName: Platform-${version}-Windows-${arch}-Setup.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true

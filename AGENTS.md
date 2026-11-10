@@ -55,3 +55,4 @@
 - React 改动关注稳定 key、Effect 清理、键盘与焦点行为。不能为了过测试改弱校验。
 - 用户可见功能批次递增版本：`src/release.ts`、`index.html`、`package.json`、锁文件根版本保持一致；文档修改不递增。禁止全局替换锁文件依赖版本。
 - MediaPipe JS 与 `public/wasm` 版本同步；改依赖后在独立目录全新 `npm ci` 与构建。保留真实模型文件。
+- 更新 Release 时沿用 [发布说明模板](docs/RELEASING.md)，逐项写清网页版入口、Mac/Windows 实际可下载的文件、实测系统与限制，同步中英文 README。

@@ -7,3 +7,6 @@ dist/
 !.env.example
 
 config/*.tmp
+
+desktop/stage/
+desktop/out/

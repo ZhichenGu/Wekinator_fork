@@ -6,7 +6,15 @@
 
 一个受 Wekinator 启发的小工具，用摄像头和麦克风做交互实验。可以录下动作示范，让它学习识别，也可以接入自己的 API 做图像和声音识别。结果通过 Serial、MQTT 或 OSC 发给 Arduino、ESP32 或其他程序。
 
-[打开网站](https://wekinator-fork.onrender.com/) → 点击「访客进入」，或使用账号登录。右上角可以切换中英文。
+### 在哪里使用 Platform？
+
+| 版本 | 入口与状态 |
+| --- | --- |
+| 网页版 | **[打开 Platform](https://ml-play.onrender.com/)**。无需安装，点击「访客进入」即可开始，右上角可切换中英文。 |
+| macOS | 0.75 桌面测试版面向 Apple Silicon（M 系列）。安装文件为 `Platform-0.75.0-macOS-arm64.dmg`，打开后将 Platform 拖入「应用程序」。当前仅本地构建。 |
+| Windows | 0.75 桌面测试版安装文件为 `Platform-0.75.0-Windows-x64-Setup.exe`，面向 Intel/AMD 64 位电脑。已校验包内文件。Mac 兼容环境安装未通过，Windows 10、11 待真机验证。当前仅本地构建。 |
+
+[GitHub Releases：查看版本记录和安装包](https://github.com/ZhichenGu/Wekinator_fork/releases)。发布后请在对应版本的 **Assets** 下载；GitHub 自动生成的 **Source code (zip / tar.gz)** 是源码，不是安装包。
 
 ### 可以做什么
 
@@ -24,7 +32,7 @@
 - **区域与停留**：选一个点，进入指定区域并停留后触发，无需训练。
 - **动作关系**：选两个点，判断距离或上下关系，无需训练。
 
-新建项目时，把鼠标放在处理方式上可以查看具体例子。动作学习可以选择「关注部位」的推荐组合，或直接点击骨骼点自定义；修改后需要重新训练。左侧动作名可双击或点击铅笔重命名。录制设置在动作列表上方；大画面向上滚出约三分之一后会出现可拖动的小预览。
+新建项目时，把鼠标放在处理方式上可以查看具体例子。动作学习可以选择「关注部位」的推荐组合，或直接点击骨骼点自定义；修改后需要重新训练。左侧动作名可双击或点击铅笔重命名。按 P 可调整录制时间；大画面向上滚出约三分之一后会出现可拖动的小预览。
 
 动态动作可切换原版算法与实验增强，增强包含动作特征、起止切分和多示范匹配。切换后需重新训练，原始录制保留；用独立测试比较效果。面部新增嘴部、眼睑和眉部组合。视觉识别可选择送检区域，声音事件支持参考音频裁切，音量支持直接标定上下端点。
 
@@ -42,7 +50,9 @@ Serial 用 USB 连接设备，建议使用桌面 Chrome 或 Edge。MQTT 在网�
 
 按 P 选择 OSC 输出，填写接收端 IP（同机 `127.0.0.1`，跨设备填私有 IPv4）、UDP 监听端口（默认 9000）和 OSC 地址。触发默认向 `/platform/trigger` 发送动作名或 YES/NO 文本，可改为自定义 String、Integer（int32）或 Float（float32）。发送整数需更新本机桥接。连续数值向 `/platform/value` 发送 float。点「应用目标」并测试，按浏览器提示允许本地网络访问，在接收软件中确认收到。
 
-项目保存在当前浏览器，可导出备份，不会跟随账号同步。API Key 和 MQTT 密码不写入项目。动作追踪在本机处理；API 识别会把提交的图片或音频经网站服务发给所选平台，使用你自己的额度。
+如果启动桥接时报 `EADDRINUSE`，表示本机桥接端口 8765 已被占用。先确认是否已经运行了 Platform 桥接；若是，直接复用。网页里的 9000 是接收软件的 UDP 端口，修改它不能解决桥接启动冲突。
+
+已保存的项目在当前浏览器中，刷新后可以从首页重新打开。视觉和声音项目修改后请点「保存项目」。可导出备份，不会跟随账号同步。API Key 和 MQTT 密码不写入项目。动作追踪在本机处理；API 识别会把提交的图片或音频经网站服务发给所选平台，使用你自己的额度。
 
 ### 本地运行
 
@@ -62,19 +72,23 @@ npm start
 
 检查代码用 `npm test`。账号管理用 `npm run users`。项目使用 React、TypeScript、Vite、Node.js 和 MediaPipe；视觉与声音 API 需要 Node 服务，不能只部署静态文件。
 
-### 后续计划
+### 使用桌面版
 
-- 提供 macOS 和 Windows 下载版，通过 GitHub Releases 发布。安装后直接打开，不用自己安装 Node.js 或启动服务器。
-- 将动作模型和必要资源随软件提供，让动作追踪、训练和本地音量处理可以离线使用。DeepSeek、OpenAI、讯飞等 API 功能仍需联网，并使用自己的凭证与额度；MQTT 需要连接可访问的 Broker。
-- 桌面版沿用现有项目导入导出，逐步验证摄像头、麦克风、Serial 和 MQTT 在两个系统上的实际表现。
-
-桌面版目前是计划，尚未提供安装包。先把识别稳定性和日常操作做好，再发布可下载版本。
+桌面版内含运行环境及手、脸、身体模型。追踪、训练和音量控制在本机运行，OSC 可直接向接收端发送。云端识别需要联网和自己的 API 凭证，MQTT 需要可访问的 Broker。网页项目迁移到桌面版时，先在网页「导出项目」，再在应用首页「打开项目」。本地 Mac 测试包使用临时签名，尚未通过 Apple 公证。Windows 测试包尚未签名。构建命令与各平台验收记录见[发布说明](docs/RELEASING.md)。
 
 ## English
 
 A small tool inspired by Wekinator, built for interactive experiments with a camera and microphone. Record examples to teach it gestures and poses, or use your own API credentials for image and audio recognition. Send results to Arduino, ESP32 or other software through Serial, MQTT or OSC.
 
-[Open the website](https://wekinator-fork.onrender.com/) → choose **Continue as guest**, or sign in. Switch languages in the top-right corner.
+### Where can I use Platform?
+
+| Edition | Availability |
+| --- | --- |
+| Web | **[Open Platform](https://ml-play.onrender.com/)** and choose **Continue as guest**. No installation required. Switch languages in the top-right corner. |
+| macOS | The 0.75 desktop test build targets Apple Silicon (M-series). Open `Platform-0.75.0-macOS-arm64.dmg` and drag Platform into Applications. Currently built locally. |
+| Windows | The 0.75 desktop test installer is `Platform-0.75.0-Windows-x64-Setup.exe` for Intel/AMD 64-bit PCs. Payload integrity checked. Installation in CrossOver did not complete. Windows 10 and 11 tests on real PCs are pending. Local build only. |
+
+[GitHub Releases: version notes and installers](https://github.com/ZhichenGu/Wekinator_fork/releases). When desktop editions ship, look under **Assets**. GitHub’s **Source code (zip / tar.gz)** archives are for developers; they are not installers.
 
 ### What it does
 
@@ -92,7 +106,7 @@ Motion tracking offers five methods:
 - **Region and dwell**: choose one point and trigger when it stays in a region. No training needed.
 - **Pose relationships**: choose two points and check their distance or vertical order. No training needed.
 
-Hover over a method when creating a project to see examples. For motion learning, choose a focus preset or click landmarks to customize the points used. Retrain after changing them. Double-click an action name or click its pencil to rename it. Recording settings sit above the action list; a draggable preview appears after about one third of the camera view scrolls above the viewport.
+Hover over a method when creating a project to see examples. For motion learning, choose a focus preset or click landmarks to customize the points used. Retrain after changing them. Double-click an action name or click its pencil to rename it. Press P to adjust recording times; a draggable preview appears after about one third of the camera view scrolls above the viewport.
 
 ### Getting started
 
@@ -108,7 +122,9 @@ On the browser computer install Node.js 22 and run `node platform_osc_bridge.mjs
 
 Press P, select OSC, and enter the receiver IP (127.0.0.1 on the same machine, or a private IPv4 on the LAN), UDP port (default 9000), and OSC address. Triggers send a custom String, Integer (int32) or Float (float32) to `/platform/trigger` and continuous controls send floats to `/platform/value`. Update the bridge for integer support. Apply the target, test send, allow local network access if prompted, and check the receiver.
 
-Projects stay in the current browser. Export them for backup; signing in does not sync them. API keys and MQTT passwords are not included in project files. Motion tracking runs locally. API recognition sends submitted images or audio through the website’s server to your chosen provider and uses your own API credit.
+If the bridge reports `EADDRINUSE`, its local port (8765) is already in use. If Platform’s bridge is already running, use that instance. The UDP port in the web form (9000 by default) belongs to the receiving software; changing it will not fix a bridge startup conflict.
+
+Saved projects stay in this browser and can be reopened from the home page after a refresh. In visual and audio projects, click **Save project** after editing. Export projects for backup; signing in does not sync them. API keys and MQTT passwords are not included in project files. Motion tracking runs locally. API recognition sends submitted images or audio through the website’s server to your chosen provider and uses your own API credit.
 
 ### Running locally
 
@@ -116,10 +132,6 @@ Use Node.js 22.12 or later. Run `npm install`, then `npm run dev` and open the a
 
 Run checks with `npm test` and manage accounts with `npm run users`. Built with React, TypeScript, Vite, Node.js and MediaPipe. Image and audio API features need the Node server; static hosting alone is not enough.
 
-### Planned updates
+### Using the desktop edition
 
-- macOS and Windows downloads through GitHub Releases, with no separate Node.js installation or server setup.
-- Bundle motion models and required resources for offline tracking, training and local volume processing. API features still need internet access and your own credentials and credit; MQTT needs a reachable broker.
-- Keep project import/export and test camera, microphone, Serial and MQTT on both systems.
-
-Desktop builds are planned; installers are not available yet. Recognition reliability and everyday use come first.
+The desktop app bundles its runtime and hand, face and body models. Tracking, training and volume control run locally. OSC sends directly to your receiver. Cloud recognition needs an internet connection and your own credentials. MQTT needs a reachable broker. To move a project from the web, choose **Export project** in the browser and **Open project** on the app’s home screen. The local Mac test build is ad hoc signed and has not been notarized. The Windows test installer is unsigned. See the [release notes and build instructions](docs/RELEASING.md).

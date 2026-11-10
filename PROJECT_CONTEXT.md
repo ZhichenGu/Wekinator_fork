@@ -1,6 +1,6 @@
 # 项目交接
 
-核对日期：2026-11-10。正式代码版本 **0.74**（package 0.74.0）。本文件是现状导航，行为细节以代码为准；不要把旧阶段文档或聊天中的未来设想当作已完成。
+核对日期：2026-11-10。本地代码版本 **0.75**（package 0.75.0）。本文件是现状导航，行为细节以代码为准；不要把旧阶段文档或聊天中的未来设想当作已完成。
 
 ## 先读什么
 1. `AGENTS.md`：长期开发规则。
@@ -84,12 +84,12 @@ Node >=22.12；`npm ci` → `npm run dev`，使用终端实际端口；Vite插�
 
 正式运行：`npm run build` → `npm start`，Node提供dist和API；默认127.0.0.1:5173，部署读取PORT。检查：`npm test`、`npm run build`。
 
-GitHub仓库：https://github.com/ZhichenGu/Wekinator_fork 。Render使用Node Web Service，构建 `npm ci --include=dev && npm run build`，启动 `npm start`；推送后仍须确认Render实际部署提交。README保留旧访问地址 `https://wekinator-fork.onrender.com/`；用户尝试过 ml-play 命名，最终域名以Render控制台为准，不能凭聊天认定迁移成功。
+GitHub仓库：https://github.com/ZhichenGu/Wekinator_fork 。Render使用Node Web Service，构建 `npm ci --include=dev && npm run build`，启动 `npm start`；推送后仍须确认Render实际部署提交。正式访问地址 https://ml-play.onrender.com/ 已通过访客入口核实。桌面安装包和各平台验证状态见 README；发布说明模板见 [docs/RELEASING.md](docs/RELEASING.md)。
 
 当前仓库没有 `.github/` 工作流或 Render blueprint。GitHub Pages纯静态托管不能提供账号与API代理；不要将Pages失败当作Render失败。未配置自动发布桌面安装包。
 
 ## 待办与已知限制
-- **计划**：macOS/Windows安装包，通过GitHub Releases发布；模型随包、项目迁移、摄像头/麦克风/串口跨系统验证。尚未实现桌面壳、打包、签名或更新器。
+- **桌面版 0.75**：`desktop/` 内的 Electron 应用复用工作台和 Node API，独立保存项目。模型随包、桌面 OSC 内置；Mac arm64 DMG 和 Windows x64 NSIS 安装包由 electron-builder 生成。发布、系统验证与签名情况见 `docs/RELEASING.md`。
 - **OSC 已实现**：通过本机 Node 桥接向本机或私有 IPv4 发送 OSC/UDP 文本、int32 或 float32，可设置目标端口及地址。双手融合、YOLO自训练、语义分割、云端同步也未实现，不当作既定下一阶段承诺。
 - **效果未充分验证**：真人跨光线/距离/速度的准确率、误触发率；增强开关不保证提高所有动作。应使用单独录制的测试集，不靠提高阈值冒充改进。
 - **上游兼容性待实测**：模型ID与账户可用性会变化，新增/修复API时核对官方文档；不要把代码白名单或mock测试当成真实调用成功。
@@ -98,6 +98,6 @@ GitHub仓库：https://github.com/ZhichenGu/Wekinator_fork 。Render使用Node W
 - `src/main.tsx` 与 `style.css` 体积较大，改动要检查相邻模式；不要在小任务中顺手重构全站。
 
 ## 验证基线与文档优先级
-本地正式版 0.67 构建通过，158 项测试通过（129 项前端与算法、29 项服务端）。在正式服务上验证了访客入口、追踪项目创建、设置面板、窄屏布局及 MQTT 教程视频加载。
+0.74 已在 Apple Silicon Mac（macOS 15.7.5）构建通过；132 项前端/算法测试和 29 项服务端测试通过。独立浏览器验证三类项目新建、P 设置、保存与刷新重开；23 个公开资源从本地正式服务读取正常。线上访客入口与本地构建的主程序和样式文件名一致。以上是网页版验收，不代表桌面安装包、真实 API 或外接硬件通过。
 
 优先级：当前用户要求 → `AGENTS.md`规则 → 实际代码与测试 → 本文现状摘要 → 旧阶段文档。`docs/识别增强说明.md`可按需了解算法取舍，其余带版本号的规格/验收是历史材料。以后实质变更同步更新本文相关段落，不追加长篇开发日志。

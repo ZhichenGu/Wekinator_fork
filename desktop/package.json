@@ -1,0 +1,11 @@
+{
+  "name": "platform-desktop-packaging",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "package": "node prepare.mjs && electron-builder --config build.yml --publish never"
+  },
+  "devDependencies": {
+    "electron-builder": "26.18.0"
+  }
+}
