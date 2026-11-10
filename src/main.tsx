@@ -437,7 +437,7 @@ function App() {
       <LearnLinks onOpen={id=>{setNotice('');setGuideId(id);setPage('learn');}}/>
     </main>
     <footer className="home-links">
-        <a className="icon-button" href="https://github.com/ZhichenGu/Wekinator_fork" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub"><Github size={20} aria-hidden="true"/></a>
+        <a className="icon-button" href="https://github.com/ZhichenGu/ml-play" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub"><Github size={20} aria-hidden="true"/></a>
         <a className="icon-button" href="https://zhichengu.onrender.com/" target="_blank" rel="noopener noreferrer" aria-label={t("Zhichen Gu 的个人网站")} title={t("Zhichen Gu 的个人网站")}><span className="personal-monogram" aria-hidden="true">ZG</span></a>
         </footer></>}
     {page==='learn'&&<LearnPage guideId={guideId} onSelect={setGuideId} onBack={()=>setPage('home')}/>}

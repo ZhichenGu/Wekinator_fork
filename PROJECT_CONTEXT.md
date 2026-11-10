@@ -84,7 +84,7 @@ Node >=22.12；`npm ci` → `npm run dev`，使用终端实际端口；Vite插�
 
 正式运行：`npm run build` → `npm start`，Node提供dist和API；默认127.0.0.1:5173，部署读取PORT。检查：`npm test`、`npm run build`。
 
-GitHub仓库：https://github.com/ZhichenGu/Wekinator_fork 。Render使用Node Web Service，构建 `npm ci --include=dev && npm run build`，启动 `npm start`；推送后仍须确认Render实际部署提交。正式访问地址 https://ml-play.onrender.com/ 已通过访客入口核实。桌面安装包和各平台验证状态见 README；发布说明模板见 [docs/RELEASING.md](docs/RELEASING.md)。
+GitHub仓库：https://github.com/ZhichenGu/ml-play 。Render使用Node Web Service，构建 `npm ci --include=dev && npm run build`，启动 `npm start`；推送后仍须确认Render实际部署提交。正式访问地址 https://ml-play.onrender.com/ 已通过访客入口核实。桌面安装包和各平台验证状态见 README；发布说明模板见 [docs/RELEASING.md](docs/RELEASING.md)。
 
 当前仓库没有 `.github/` 工作流或 Render blueprint。GitHub Pages纯静态托管不能提供账号与API代理；不要将Pages失败当作Render失败。未配置自动发布桌面安装包。
 

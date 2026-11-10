@@ -14,7 +14,7 @@
 | macOS | 0.75 桌面测试版面向 Apple Silicon（M 系列）。安装文件为 `Platform-0.75.0-macOS-arm64.dmg`，打开后将 Platform 拖入「应用程序」。当前仅本地构建。 |
 | Windows | 0.75 桌面测试版安装文件为 `Platform-0.75.0-Windows-x64-Setup.exe`，面向 Intel/AMD 64 位电脑。已校验包内文件。Mac 兼容环境安装未通过，Windows 10、11 待真机验证。当前仅本地构建。 |
 
-[GitHub Releases：查看版本记录和安装包](https://github.com/ZhichenGu/Wekinator_fork/releases)。发布后请在对应版本的 **Assets** 下载；GitHub 自动生成的 **Source code (zip / tar.gz)** 是源码，不是安装包。
+[GitHub Releases：查看版本记录和安装包](https://github.com/ZhichenGu/ml-play/releases)。发布后请在对应版本的 **Assets** 下载；GitHub 自动生成的 **Source code (zip / tar.gz)** 是源码，不是安装包。
 
 ### 可以做什么
 
@@ -88,7 +88,7 @@ A small tool inspired by Wekinator, built for interactive experiments with a cam
 | macOS | The 0.75 desktop test build targets Apple Silicon (M-series). Open `Platform-0.75.0-macOS-arm64.dmg` and drag Platform into Applications. Currently built locally. |
 | Windows | The 0.75 desktop test installer is `Platform-0.75.0-Windows-x64-Setup.exe` for Intel/AMD 64-bit PCs. Payload integrity checked. Installation in CrossOver did not complete. Windows 10 and 11 tests on real PCs are pending. Local build only. |
 
-[GitHub Releases: version notes and installers](https://github.com/ZhichenGu/Wekinator_fork/releases). When desktop editions ship, look under **Assets**. GitHub’s **Source code (zip / tar.gz)** archives are for developers; they are not installers.
+[GitHub Releases: version notes and installers](https://github.com/ZhichenGu/ml-play/releases). When desktop editions ship, look under **Assets**. GitHub’s **Source code (zip / tar.gz)** archives are for developers; they are not installers.
 
 ### What it does
 
