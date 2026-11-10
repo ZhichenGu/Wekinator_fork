@@ -69,8 +69,12 @@ export function WorkspaceSettings({sections,status,attention}:{attention?:{index
       box.style.bottom=(innerHeight-end)+'px';
       setLimit(Math.max(0,Math.floor(Math.min(innerHeight*.82,end-topLimit))));
     };
-    place();
-    const resize=new ResizeObserver(place);resize.observe(workspace);if(open&&camera)resize.observe(camera);resize.observe(button);
+    const onResize=()=>{
+      workspace.style.setProperty('--settings-button-width',button.getBoundingClientRect().width+'px');
+      place();
+    };
+    onResize();
+    const resize=new ResizeObserver(onResize);resize.observe(workspace);if(open&&camera)resize.observe(camera);resize.observe(button);
     document.addEventListener('scroll',place,true);window.addEventListener('resize',place);
     return ()=>{resize.disconnect();document.removeEventListener('scroll',place,true);window.removeEventListener('resize',place);};
   },[open]);
