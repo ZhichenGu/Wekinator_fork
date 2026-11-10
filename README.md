@@ -38,9 +38,9 @@ Serial 用 USB 连接设备，建议使用桌面 Chrome 或 Edge。MQTT 在网�
 
 ### OSC 接收
 
-在浏览器所在电脑安装 Node.js 22，在下载目录运行 `node platform_osc_bridge.mjs`。首页「教程与示例 → 案例代码」提供[本机桥接](public/examples/platform_osc_bridge.mjs)和 [Max 接收案例](public/examples/osc_receiver.maxpat)。Processing 可用 oscP5，openFrameworks 可用 ofxOsc。
+在浏览器所在电脑安装 Node.js 22，在下载目录运行 `node platform_osc_bridge.mjs`。首页「教程与示例 → 案例代码」提供[本机桥接](public/examples/platform_osc_bridge.mjs)和 [Max 接收案例](public/examples/osc_receiver.maxpat)。下载 [Processing 动作触发草图](public/examples/processing_trigger.zip)（oscP5）或 [openFrameworks 连续数值工程](public/examples/openframeworks_value.zip)（ofxOsc）。一次只运行一个监听同一端口的案例。
 
-按 P 选择 OSC 输出，填写接收端 IP（同机 `127.0.0.1`，跨设备填私有 IPv4）、UDP 监听端口（默认 9000）和 OSC 地址。触发默认向 `/platform/trigger` 发送文本，连续数值向 `/platform/value` 发送 float。点「应用目标」并测试，按浏览器提示允许本地网络访问，在接收软件中确认收到。
+按 P 选择 OSC 输出，填写接收端 IP（同机 `127.0.0.1`，跨设备填私有 IPv4）、UDP 监听端口（默认 9000）和 OSC 地址。触发默认向 `/platform/trigger` 发送动作名或 YES/NO 文本，可改为自定义 String、Integer（int32）或 Float（float32）。发送整数需更新本机桥接。连续数值向 `/platform/value` 发送 float。点「应用目标」并测试，按浏览器提示允许本地网络访问，在接收软件中确认收到。
 
 项目保存在当前浏览器，可导出备份，不会跟随账号同步。API Key 和 MQTT 密码不写入项目。动作追踪在本机处理；API 识别会把提交的图片或音频经网站服务发给所选平台，使用你自己的额度。
 
@@ -104,9 +104,9 @@ For Serial, connect your device over USB and use desktop Chrome or Edge. For MQT
 
 ### Receiving OSC
 
-On the browser computer install Node.js 22 and run `node platform_osc_bridge.mjs` from the downloads folder. Get the [bridge](public/examples/platform_osc_bridge.mjs) and [Max patch](public/examples/osc_receiver.maxpat) from Learn & Connect → Example code. Use oscP5 in Processing or ofxOsc in openFrameworks.
+On the browser computer install Node.js 22 and run `node platform_osc_bridge.mjs` from the downloads folder. Get the [bridge](public/examples/platform_osc_bridge.mjs) and [Max patch](public/examples/osc_receiver.maxpat) from Learn & Connect → Example code. Download the [Processing trigger sketch](public/examples/processing_trigger.zip) (oscP5) or [openFrameworks continuous example](public/examples/openframeworks_value.zip) (ofxOsc). Run one receiver per port.
 
-Press P, select OSC, and enter the receiver IP (127.0.0.1 on the same machine, or a private IPv4 on the LAN), UDP port (default 9000), and OSC address. Triggers send strings to `/platform/trigger` and continuous controls send floats to `/platform/value`. Apply the target, test send, allow local network access if prompted, and check the receiver.
+Press P, select OSC, and enter the receiver IP (127.0.0.1 on the same machine, or a private IPv4 on the LAN), UDP port (default 9000), and OSC address. Triggers send a custom String, Integer (int32) or Float (float32) to `/platform/trigger` and continuous controls send floats to `/platform/value`. Update the bridge for integer support. Apply the target, test send, allow local network access if prompted, and check the receiver.
 
 Projects stay in the current browser. Export them for backup; signing in does not sync them. API keys and MQTT passwords are not included in project files. Motion tracking runs locally. API recognition sends submitted images or audio through the website’s server to your chosen provider and uses your own API credit.
 

@@ -21,3 +21,18 @@ test('OSC supports separate trigger and float paths and rejects malformed destin
     assert.throws(()=>cleanOscTarget({...config,...changes}));
   }
 });
+
+import {oscArgument,oscValue} from './osc';
+
+test('OSC trigger mappings preserve text, integer and float wire types and the negative result',()=>{
+  for (const type of ['string','integer','float'] as const) {
+    const target=cleanOscTarget({...defaultOscTarget(false),trigger:{type,yes:'1',no:'0'}});
+    assert.deepEqual(oscArgument('YES',target),{type,value:type==='string'?'1':1});
+    assert.deepEqual(oscArgument('NO',target,false),{type,value:type==='string'?'0':0});
+    assert.deepEqual(oscArgument(1,target),{type:'float',value:1});
+    assert.deepEqual(cleanAudioProject({...newAudioProject('test','event'),effect:'osc',osc:target}).osc,target);
+  }
+  assert.deepEqual(oscArgument('Wave'),{type:'string',value:'Wave'});
+  for (const raw of ['1.5','2147483648','-2147483649','YES','']) assert.throws(()=>oscValue('integer',raw));
+  assert.throws(()=>oscValue('float','1e200'));
+});

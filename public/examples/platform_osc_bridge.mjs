@@ -13,7 +13,13 @@ function oscString(text) {
   return padded;
 }
 
-function packet(address,value) {
+function packet(address,value,integer) {
+  if (integer) {
+    if (!Number.isInteger(value) || value < -2147483648 || value > 2147483647) throw Error('Expected int32');
+    const argument=Buffer.alloc(4);
+    argument.writeInt32BE(value);
+    return Buffer.concat([oscString(address),oscString(',i'),argument]);
+  }
   if (typeof value === 'string' && value.length > 0 && value.length <= 512 && !value.includes('\0')) {
     return Buffer.concat([oscString(address), oscString(',s'), oscString(value)]);
   }
@@ -34,7 +40,7 @@ const server = http.createServer(async (req, res) => {
   }
   res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Vary', 'Origin');
-  if (req.url !== '/osc') { res.writeHead(404).end(); return; }
+  if (req.url !== '/osc' && req.url !== '/osc/int32') { res.writeHead(404).end(); return; }
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
       'Access-Control-Allow-Methods': 'POST',
@@ -61,7 +67,7 @@ const server = http.createServer(async (req, res) => {
     const allowed=target===host || a===10 || a===192&&b===168 || a===172&&b>=16&&b<=31;
     if (!allowed || !Number.isInteger(port) || port<1 || port>65535 ||
         typeof address!=='string' || address.length>160 || !/^(\/[A-Za-z0-9_.-]+)+$/.test(address)) throw Error('Invalid destination');
-    const message = packet(address,value);
+    const message = packet(address,value,req.url==='/osc/int32');
     udp.send(message, port, target, error => res.writeHead(error ? 502 : 204).end());
   } catch { res.writeHead(400).end(); }
 });
