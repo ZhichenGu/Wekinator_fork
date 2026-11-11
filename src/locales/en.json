@@ -1109,6 +1109,7 @@
   "将当前输入设为最低": "Set current input as minimum",
   "将当前输入设为最高": "Set current input as maximum",
   "连续发送映射后的数值；停止读取不会发送零值。": "Send mapped values continuously. Stopping input does not send zero.",
+  "参考声音已设置": "Reference sound set",
   "项目已保存；参考声音会保留，Key、待测录音和转写不保存。": "Project saved with its reference sound. Keys, test recordings and transcripts are not saved.",
   "已验证": "Verified",
   "未配置": "Not configured",
