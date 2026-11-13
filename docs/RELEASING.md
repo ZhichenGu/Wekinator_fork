@@ -1,11 +1,11 @@
 # Platform 发布说明
 
-README 回答“今天能用哪个版本”；一个 GitHub Release 对应一个版本，记录“这一版改了什么、该下载哪个文件、实际在哪跑过”。网页版可以单独发版，不必等桌面版。公开测试包标为预发布，并注明各系统待验证的项目。正式版只列已验证的平台。仓库维护者负责最终推送和发布。
+README 回答“今天能用哪个版本”；一个 GitHub Release 对应一个版本，记录“这一版改了什么、该下载哪个文件、实际在哪跑过”。网页版可以单独发版，不必等桌面版。按用户授权选择正式发布或预发布；发布标签不能替代各平台验收。未验证的平台附件明确标为测试包，不能宣称兼容性通过。推送、发布及可能的自动部署须在授权范围内完成。
 
-## v0.79.0 发布候选
+## v0.79.0 · 2026-11-13
 
 - 修正版已合入正式本地源码。147 项前端/算法/案例测试、30 项服务端测试和 3 项 Python 回调检查通过；构建与八个 ZIP 一致性检查通过。
-- 新包为 `Platform-0.79.0-macOS-arm64.dmg` 与 `Platform-0.79.0-Windows-x64-Setup.exe`，校验文件为 `SHA256SUMS.txt`，集中在 `desktop/out/release-0.79.0/`。上传和发布完成后再更新公开下载链接。
+- 新包为 `Platform-0.79.0-macOS-arm64.dmg` 与 `Platform-0.79.0-Windows-x64-Setup.exe`，校验文件为 `SHA256SUMS.txt`，集中在 `desktop/out/release-0.79.0/`。对应 [v0.79.0 发布页](https://github.com/ZhichenGu/ml-play/releases/tag/v0.79.0)，中英文 README 使用本版附件链接。Windows 附件明确作为测试包提供。
 - Mac 在当前 macOS 15.7.5 / Apple Silicon 上校验最终 DMG、挂载复制应用、卸载映像后启动。界面版本 0.79，原项目可读，新坐标项目退出重开保留。应用内测试发送经独立本机 UDP 接收，验证 `/platform/hand/index_tip/x` 与 `/y` 均为 Float 0.5；未启动外部桥接。未测试真人准确率、真实串口、付费 API。
 - Mac 为 ad hoc 签名，已校验签名，未获 Apple 公证。Windows 无签名；安装程序的嵌入压缩包完整性通过，解出的 app.asar 与构建内容逐字节一致，应用和 EXE 版本均为 0.79.0。未声称 Windows 10/11 真机安装、启动或设备权限通过。
 - 本次正常构建遇到 Electron 下载缓慢；核对本地既有运行环境为相同 Electron 45.2.3 后复用运行环境，重新生成完整 app.asar，更新 Mac/Windows 版本与 ASAR 完整性信息，再签署 Mac、制作 DMG 和 NSIS。不是把 0.75 安装包改名。

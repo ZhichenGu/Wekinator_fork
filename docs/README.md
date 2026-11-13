@@ -25,7 +25,7 @@
 | [0.5物体检测API规格与验收.md](0.5物体检测API规格与验收.md) | 历史快照；加明确版本边界，不改写当时实测结论 |
 | [0.6提前保存与命名更新.md](0.6提前保存与命名更新.md) | 历史快照；加明确版本边界，不改写当时实测结论 |
 | [COORDINATE_PREVIEW.md](COORDINATE_PREVIEW.md) | 标为 0.77–0.78 阶段记录，转当前入口 |
-| [RELEASING.md](RELEASING.md) | 区分新候选与 0.75 历史包；最终结果发布前补齐 |
+| [RELEASING.md](RELEASING.md) | 0.79 安装包验收与发布说明；保留 0.75 历史结果 |
 | [examples/ContinuousOSC/README.txt](examples/ContinuousOSC/README.txt) | 补网页版/桌面桥接区别；连续示例补最后值与超时说明 |
 | [examples/ContinuousOSC/addons.make](examples/ContinuousOSC/addons.make) | 逐份阅读；接收地址/类型与发送端对应，源码保持不变，软件编译运行仍待验 |
 | [examples/ContinuousOSC/src/main.cpp](examples/ContinuousOSC/src/main.cpp) | 逐份阅读；接收地址/类型与发送端对应，源码保持不变，软件编译运行仍待验 |

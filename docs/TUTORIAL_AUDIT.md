@@ -18,7 +18,7 @@
 | p5.js 未等订阅确认便报告成功，旧连接回调覆盖新状态 | 等待订阅回执，失败保留原因，忽略被替换连接、无关主题与保留消息 |
 | TouchDesigner 非法 JSON 可能清空表或触发未处理异常 | 完整校验 mode、轴字段及有限数值后才替换表，失败保留原值与时间；TOPIC 可修改，忽略非当前主题与保留消息 |
 | 串口示例日志在何处看不清楚 | 说明 Platform 不展示设备回传日志、串口不能双占用，坐标需双端链路；点灯/纯数字案例不能当 JSON 转发器 |
-| 桌面包与网页/源码能力混在一起 | README、发布说明与交接区分来源：公开包仍是 0.75，不含坐标模式，不声称源码修改已进入安装包 |
+| 桌面包与网页/源码能力混在一起 | README、发布说明与交接区分来源：0.79 包已重建并包含坐标模式；0.75 保留为历史版本，验证按包区分 |
 | 下载源码更新后 ZIP 容易落后 | 新增可重建和逐字节检查的打包脚本，同步八个 ZIP；不把凭据或缓存打入包 |
 | 旧启动 Prompt 要求不使用 OSC/重新实现应用 | 更新为阅读当前规则和代码继续开发；旧 0.43 验收移至 archive，当前验收入口改为本版状态 |
 
@@ -41,7 +41,7 @@ Python 只用于维护 ZIP 和测试下载的 Python 回调；Platform 使用和
 
 ## 验证边界
 
-未在 Processing、openFrameworks、Max/MSP、TouchDesigner 中完成真实安装、编译与运行；未用真实 Broker 或物理 Serial 链路验收；未新增真人识别准确率或付费 API 调用结论。本轮范围内的示例解析与页面检查不代表外接设备已经执行。Windows 10/11 与 Mac 安装包仍沿用 0.75 的原有验证状态。
+未在 Processing、openFrameworks、Max/MSP、TouchDesigner 中完成真实安装、编译与运行；未用真实 Broker 或物理 Serial 链路验收；未新增真人识别准确率或付费 API 调用结论。本轮范围内的示例解析与页面检查不代表外接设备已经执行。0.79 最终安装包的检查另见 RELEASING.md：Mac 已验证启动、保存重开及命名轴 OSC；Windows 10/11 真机仍待测。
 
 ## 官方资料核对
 
@@ -50,4 +50,4 @@ Python 只用于维护 ZIP 和测试下载的 Python 回调；Platform 使用和
 - [Max udpreceive 解码方式](https://docs.cycling74.com/reference/udpreceive/)
 - [Processing Serial](https://processing.org/reference/libraries/serial/)、[openFrameworks ofxOscReceiver](https://openframeworks.cc/documentation/ofxOsc/ofxOscReceiver/)
 - [MQTT.js 订阅确认](https://github.com/mqttjs/MQTT.js)、[EMQX Serverless 部署](https://docs.emqx.com/en/cloud/latest/create/serverless.html)
-- [现有桌面预发布](https://github.com/ZhichenGu/ml-play/releases/tag/v0.75.0)
+- [0.79 桌面发布与验证范围](https://github.com/ZhichenGu/ml-play/releases/tag/v0.79.0)
