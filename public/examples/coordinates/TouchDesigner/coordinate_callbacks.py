@@ -23,7 +23,7 @@ def write_frame(dat, payload):
         now = time.monotonic()
         if 'values' in frame:
             values = frame['values']
-            if not isinstance(values, dict) or not 1 <= len(values) <= 12 or any(
+            if not isinstance(values, dict) or not 1 <= len(values) <= 126 or any(
                 not CHANNEL.fullmatch(key) or not number(value) for key, value in values.items()
             ):
                 raise ValueError('Invalid named coordinates')
@@ -31,7 +31,7 @@ def write_frame(dat, payload):
             rows.extend([channel, value, now] for channel, value in values.items())
         else:
             points = frame.get('points')
-            if not isinstance(points, list) or not 1 <= len(points) <= 4:
+            if not isinstance(points, list) or not 1 <= len(points) <= 42:
                 raise ValueError('Invalid coordinate points')
             rows = [['mode', 'id', 'x', 'y', 'z', 'received_seconds']]
             for point in points:

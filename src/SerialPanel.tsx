@@ -26,11 +26,11 @@ export function useSerialOutput() {
     api?.addEventListener('connect',onConnect);api?.addEventListener('disconnect',onDisconnect);
     return ()=>{api?.removeEventListener('connect',onConnect);api?.removeEventListener('disconnect',onDisconnect);void connection.current.disconnect().catch(()=>{});};
   },[api,refresh]);
-  const send=useCallback(async(message:SerialMessage)=>{
+  const send=useCallback(async(message:SerialMessage,coordinates=false)=>{
     if(!connection.current.port)throw new Error('串口未连接，没有发送数据。');
     if(statusRef.current==='sending'||statusRef.current==='closing')throw new Error('串口忙，本次未发送。');
     setStatus('sending');statusRef.current='sending';setError('');
-    try{await connection.current.send(message);setFeedback(`已写入串口：${JSON.stringify(message.text)}。未确认设备执行。`);}
+    try{await connection.current.send(message,coordinates);setFeedback(`已写入串口：${JSON.stringify(message.text)}。未确认设备执行。`);}
     catch(e){setError(e instanceof Error?e.message:'串口发送失败。');throw e;}
     finally{const next=connection.current.port?'connected':'idle';statusRef.current=next;setStatus(next);}
   },[]);

@@ -24,7 +24,7 @@ test('Max Serial ignores unrelated names, invalid numbers and whole overlong lin
   feed('{"mode":"hand","values":{"wrist_x":0.2}}');assert.deepEqual(sent,[]);
   feed('{"mode":"hand","values":{"index_tip_x":0.2,"index_tip_y":0.7}}');assert.deepEqual(sent,[[0,.2],[1,.7],[3,8]]);
   sent.length=0;feed('{"mode":"hand","values":{"index_tip_x":1e999}}');assert.deepEqual(sent,[]);
-  feed(' '.repeat(4097)+'{"mode":"hand","values":{"index_tip_x":0.9}}');assert.deepEqual(sent,[]);
+  feed(' '.repeat(8193)+'{"mode":"hand","values":{"index_tip_x":0.9}}');assert.deepEqual(sent,[]);
   feed('{"mode":"hand","points":[{"id":8,"x":0.4,"y":0.6}]}');assert.deepEqual(sent,[[3,8],[2,0],[1,.6],[0,.4]]);
 });
 test('p5 receiver only refreshes recognized finite coordinates, including legacy JSON',()=>{

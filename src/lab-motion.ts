@@ -10,6 +10,12 @@ const rms=(a:number[],b:number[])=>a.length===b.length&&a.length?Math.sqrt(a.red
  * The original trajectory is deliberately retained in camera coordinates. */
 export function handFeatures(frame:Frame,focus?:number[]):Frame|null{
  const p=frame.points;if(p.length<21)return null;
+ if(frame.handCount===2){
+   const left=handFeatures({...frame,handCount:1,points:p.slice(0,21)},focus),right=handFeatures({...frame,handCount:1,points:p.slice(21,42)},focus);
+   if(!left||!right||!frame.handRoots)return null;
+   const [lx,ly,rx,ry]=frame.handRoots,scale=frame.scale;
+   return {...frame,shape:[...left.shape,...right.shape,(rx-lx)/scale,(ry-ly)/scale]};
+ }
  const ids=focus??Array.from({length:21},(_,i)=>i);
  if([...ids,0,9].some(i=>!p[i]||!Number.isFinite(p[i].x)||!Number.isFinite(p[i].y)))return null;
  const aspect=frame.aspectRatio??1;if(!Number.isFinite(aspect)||aspect<=0)return null;
@@ -64,7 +70,7 @@ export type MotionClip={frames:Frame[];start:number;end:number};
 export function motionClip(frames:Frame[],feature:FeatureMode,latest=false):MotionClip|null{
  if(frames.length<10||frames.some((f,i)=>i>0&&(f.t<=frames[i-1].t||f.t-frames[i-1].t>220)))return null;
  const speed=frames.slice(1).map((f,i)=>{const a=frames[i],dt=(f.t-a.t)/1000;
- const shape=rms(f.shape,a.shape),path=Math.hypot(f.root[0]-a.root[0],f.root[1]-a.root[1])/Math.max(.015,(f.scale+a.scale)/2);
+ const shape=rms(f.shape,a.shape),path=(f.handRoots&&a.handRoots?Math.hypot(...f.handRoots.map((v,k)=>v-a.handRoots![k]))/Math.SQRT2:Math.hypot(f.root[0]-a.root[0],f.root[1]-a.root[1]))/Math.max(.015,(f.scale+a.scale)/2);
  return (feature==='shape'?shape:feature==='path'?path:Math.sqrt((shape*shape+path*path)/2))/dt;});
  const sorted=[...speed].sort((a,b)=>a-b),peak=sorted[Math.floor((sorted.length-1)*.9)];
  const threshold=Math.max(.12,Math.min(.8,peak*.15));

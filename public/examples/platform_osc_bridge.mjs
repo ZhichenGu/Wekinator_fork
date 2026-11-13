@@ -46,7 +46,7 @@ export function createOscReceiver() {
       const chunks = [];
       for await (const chunk of req) {
         length += chunk.length;
-        if (length > 4096) { res.writeHead(413).end(); return; }
+        if (length > (coordinates?16384:4096)) { res.writeHead(413).end(); return; }
         chunks.push(chunk);
       }
       const {host:target,port,address,value,points}=JSON.parse(Buffer.concat(chunks).toString('utf8'));
@@ -57,7 +57,7 @@ export function createOscReceiver() {
           typeof address!=='string' || address.length>160 || !/^(\/[A-Za-z0-9_.-]+)+$/.test(address)) throw Error('Invalid destination');
       let messages;
       if(coordinates) {
-        if(!Array.isArray(points)||points.length<1||points.length>4||new Set(points.map(p=>p.id)).size!==points.length)throw Error('Invalid coordinate batch');
+        if(!Array.isArray(points)||points.length<1||points.length>42||new Set(points.map(p=>p.id)).size!==points.length)throw Error('Invalid coordinate batch');
         messages=points.map(p=>{
           if(!Number.isInteger(p.id)||p.id<0||p.id>477||!Array.isArray(p.values))throw Error('Invalid point');
           if(p.name!==undefined||p.axes!==undefined){

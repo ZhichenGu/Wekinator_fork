@@ -13,7 +13,7 @@ export async function sendOsc(value:string|number|{id:number;values:number[];nam
       method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({host:target.host,port:target.port,address:target.address,...(vector?{points:value}:{value:argument.value})}),
       credentials:'omit', redirect:'error', signal:AbortSignal.timeout(10000)
     });
-    if((vector||path==='osc/int32')&&res.status===404) throw new RangeError();
+    if(((vector||path==='osc/int32')&&res.status===404)||(vector&&value.length>4&&res.status===400)) throw new RangeError();
     if(res.status!==204) throw Error();
   } catch (error) {
     if(desktop) throw Error(t('OSC 发送失败，请检查接收端地址和端口。'));

@@ -1,3 +1,4 @@
+import {validateCoordinatePayload,COORDINATE_PAYLOAD_LIMIT} from './coordinate-payload';
 import {t} from './i18n';
 export type LineEnding = 'none' | 'lf' | 'crlf';
 export type SerialMessage = { text: string; lineEnding: LineEnding };
@@ -13,8 +14,9 @@ export interface SerialAPI extends EventTarget {
   getPorts(): Promise<DevicePort[]>;
   requestPort(): Promise<DevicePort>;
 }
-export function encodeMessage(message: SerialMessage): Uint8Array {
-  if (typeof message.text !== 'string' || !message.text.length || message.text.length > 512) throw new Error('发送内容需为 1–512 个字符。');
+export function encodeMessage(message: SerialMessage, coordinates=false): Uint8Array {
+  if(coordinates)validateCoordinatePayload(message.text);
+  if (typeof message.text !== 'string' || !message.text.length || message.text.length > (coordinates?COORDINATE_PAYLOAD_LIMIT:512)) throw new Error('发送内容需为 1–512 个字符。');
   if (!['none','lf','crlf'].includes(message.lineEnding)) throw new Error('不支持的结束符。');
   const ending = message.lineEnding === 'lf' ? '\n' : message.lineEnding === 'crlf' ? '\r\n' : '';
   return new TextEncoder().encode(message.text + ending);
@@ -38,8 +40,8 @@ export class SerialConnection {
     try { await port.open({baudRate});if(gen!==this.generation){await port.close();throw new Error('连接已取消。');}this.port = port; }
     finally { this.opening = false; }
   }
-  send(message: SerialMessage): Promise<void> {
-    const bytes = encodeMessage(message);
+  send(message: SerialMessage,coordinates=false): Promise<void> {
+    const bytes = encodeMessage(message,coordinates);
     if (!this.port?.writable) return Promise.reject(new Error('串口未连接，没有发送数据。'));
     if (this.sending) return Promise.reject(new Error('上一条数据仍在发送，本次未发送。'));
     const writer = this.port.writable.getWriter(); this.writer = writer;

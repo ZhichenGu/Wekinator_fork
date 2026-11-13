@@ -1,10 +1,11 @@
+import {CoordinateHands,type CoordinateHandOptions} from './coordinate-hands';
 import type {Mode,Point} from './core';
 
-type Detector={detect:(video:HTMLVideoElement,t:number)=>Promise<Point[]>;close:()=>void;fallback:boolean};
+type Detector={detect:(video:HTMLVideoElement,t:number,options?:CoordinateHandOptions)=>Promise<Point[]>;close:()=>void;fallback:boolean};
 
 // Match the learning workspace: module Workers are preferred, but some browsers
 // cannot run MediaPipe's WASM loader there. Keep the same camera stream on fallback.
-export async function createCoordinateDetector(mode:Mode,base:string,signal:AbortSignal):Promise<Detector> {
+export async function createCoordinateDetector(mode:Mode,base:string,signal:AbortSignal,handOptions?:CoordinateHandOptions):Promise<Detector> {
   let worker:Worker|undefined;
   let closed=false;
   let pending:((points:Point[])=>void)|undefined;
@@ -33,7 +34,7 @@ export async function createCoordinateDetector(mode:Mode,base:string,signal:Abor
         cancelInit=()=>finish(abortError());
         candidate.onerror=()=>finish(new Error('Worker initialization failed'));
         candidate.onmessage=e=>{if(e.data.type==='ready')finish();if(e.data.type==='error')finish(new Error(e.data.message));};
-        try {candidate.postMessage({type:'init',mode,base});}catch(e){finish(e instanceof Error?e:new Error(String(e)));}
+        try {candidate.postMessage({type:'init',mode,base,coordinateHands:mode==='hand',handOptions});}catch(e){finish(e instanceof Error?e:new Error(String(e)));}
       });
       check();
       candidate.onerror=()=>{failed?.(new Error('Detection worker failed'));pending=undefined;failed=undefined;};
@@ -41,12 +42,12 @@ export async function createCoordinateDetector(mode:Mode,base:string,signal:Abor
         if(e.data.type==='result'){pending?.(e.data.points??[]);pending=undefined;failed=undefined;}
         if(e.data.type==='error'){failed?.(new Error(e.data.message));pending=undefined;failed=undefined;}
       };
-      return {fallback:false,close,detect:async(video,t)=>{
+      return {fallback:false,close,detect:async(video,t,options)=>{
         check();const image=await createImageBitmap(video);
         if(signal.aborted||closed){image.close();throw abortError();}
         return new Promise<Point[]>((resolve,reject)=>{
           pending=resolve;failed=reject;
-          try {candidate.postMessage({type:'frame',image,t},[image]);}
+          try {candidate.postMessage({type:'frame',image,t,handOptions:options??handOptions},[image]);}
           catch(e){pending=undefined;failed=undefined;image.close();reject(e);}
         });
       }};
@@ -56,10 +57,12 @@ export async function createCoordinateDetector(mode:Mode,base:string,signal:Abor
     const mp=await import('@mediapipe/tasks-vision');check();
     const files=await mp.FilesetResolver.forVisionTasks(base+'wasm');check();
     const opts={baseOptions:{modelAssetPath:base+'models/'+mode+'.task',delegate:'CPU' as const},runningMode:'VIDEO' as const};
+    let currentHandOptions=handOptions;
     let detect:(video:HTMLVideoElement,t:number)=>Point[];
     if(mode==='hand'){
-      const d=await mp.HandLandmarker.createFromOptions(files,{...opts,numHands:1,minHandDetectionConfidence:.6,minHandPresenceConfidence:.6});
-      closeMain=()=>d.close();detect=(video,t)=>d.detectForVideo(video,t).landmarks[0]??[];
+      const d=await mp.HandLandmarker.createFromOptions(files,{...opts,numHands:2,minHandDetectionConfidence:.6,minHandPresenceConfidence:.6});
+      const hands=new CoordinateHands();
+      closeMain=()=>d.close();detect=(video,t)=>hands.step(d.detectForVideo(video,t),currentHandOptions?.hand,currentHandOptions?.handMode==='dual',t);
     }else if(mode==='face'){
       const d=await mp.FaceLandmarker.createFromOptions(files,{...opts,numFaces:1,outputFaceBlendshapes:true});
       closeMain=()=>d.close();detect=(video,t)=>d.detectForVideo(video,t).faceLandmarks[0]??[];
@@ -68,6 +71,6 @@ export async function createCoordinateDetector(mode:Mode,base:string,signal:Abor
       closeMain=()=>d.close();detect=(video,t)=>d.detectForVideo(video,t).landmarks[0]??[];
     }
     check();
-    return {fallback:true,close,detect:async(video,t)=>{check();return detect(video,t);}};
+    return {fallback:true,close,detect:async(video,t,options)=>{check();currentHandOptions=options??handOptions;return detect(video,t);}};
   }catch(e){close();throw e;}
 }

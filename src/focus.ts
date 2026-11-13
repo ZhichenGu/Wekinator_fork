@@ -1,3 +1,4 @@
+import {dualHandFrame} from './hand-learning';
 import {extract,type Frame,type Mode,type Project,type Point} from './core';
 import {FACE_CORE_POINTS,landmarkIds,validLandmark} from './region';
 export const recommendedPoints=(mode:Mode)=>mode==='pose'?[11,12,13,14,15,16,23,24,25,26,27,28]:mode==='face'?[...FACE_CORE_POINTS]:landmarkIds(mode).sort((a,b)=>a-b);
@@ -19,8 +20,8 @@ export function frameBlend(frame:Frame|null):number[]{return frame?.blend??(fram
 export function changeFocus(project:Project,focus:number[]|undefined):Project{
  if(focus!==undefined&&!validFocus(project.mode,focus))throw new Error('请至少选择一个有效骨骼点。');
  const actions=project.actions.map(action=>({...action,trained:false,samples:action.samples.map(sample=>({...sample,frames:sample.frames.map(frame=>{
-  const next=focus?focusedFrame(project.mode,frame.points,focus,frame.t,frameBlend(frame)):extract(project.mode,frame.points,frameBlend(frame),frame.t);
-  if(!next)throw new Error('已有录制缺少所选部位的有效点，请保留当前设置或移除对应录制后再修改。');return {...next,aspectRatio:frame.aspectRatio};
+  const next=frame.handCount===2?dualHandFrame(frame.points,frame.t,focus):focus?focusedFrame(project.mode,frame.points,focus,frame.t,frameBlend(frame)):extract(project.mode,frame.points,frameBlend(frame),frame.t);
+  if(!next)throw new Error('已有录制缺少所选部位的有效点，请保留当前设置或移除对应录制后再修改。');return {...next,handCount:frame.handCount,handSide:frame.handSide,aspectRatio:frame.aspectRatio};
  })}))}));
  return {...project,focus,actions};
 }

@@ -6,7 +6,8 @@ export type TrialResult={sampleId:string;actionId:string;actionName:string;expec
 export type EvaluationReport={testRound?:number;version:string;settings:{lab?:Project['lab'];feature:string;poseHoldSeconds:number|null;thresholds:{id:string;name:string;threshold:number;trained:boolean}[]};projectName:string;mode:string;createdAt:string;total:number;evaluated:number;skipped:number;positiveCount:number;positiveCorrect:number;negativeCount:number;negativeCorrect:number;misses:number;confused:number;extra:number;falseTriggers:number;negativeMinutes:number;perAction:{id:string;name:string;tested:number;correct:number;missed:number;repeated:number}[];confusion:{expected:string;predicted:string;count:number}[];trials:TrialResult[]};
 export function sampleSignature(project:Project,sample:Sample):string{
   const seq=learningMode(project)==='pose'?resample(sample.frames,60).map(f=>f.shape):sequence(sample.frames,project.feature);
-  return JSON.stringify(seq.map(vector=>vector.map(v=>Math.round(v*1e6)/1e6)));
+  const vectors=seq.map(vector=>vector.map(v=>Math.round(v*1e6)/1e6));
+  return JSON.stringify(project.handTracking?[sample.frames[0]?.handCount??1,sample.frames[0]?.handSide??null,vectors]:vectors);
 }
 export function evaluateProject(project:Project,onProgress?:(done:number,total:number)=>void,testRound?:number):EvaluationReport{
  if(project.learning==='continuous')throw new Error('连续控制不使用分类式测试报告。');

@@ -14,9 +14,9 @@ export function useMqttOutput(){
     try{await connection.current.connect(config,password,(s,m)=>{setState(s);setMessage(m);});}
     catch(e){setState('error');setMessage(e instanceof Error?e.message:'MQTT 连接失败。');}
   }
-  const send=useCallback(async(value:MqttMessage)=>{
+  const send=useCallback(async(value:MqttMessage,coordinates=false)=>{
     setSending(true);
-    try{await connection.current.send(value);setMessage(value.qos===1?'Broker 已确认接收。尚未确认设备执行。':'消息已提交发送。尚未确认 Broker 或设备接收。');}
+    try{await connection.current.send(value,coordinates);setMessage(value.qos===1?'Broker 已确认接收。尚未确认设备执行。':'消息已提交发送。尚未确认 Broker 或设备接收。');}
     catch(e){setMessage(e instanceof Error?e.message:'MQTT 发送失败。');throw e;}
     finally{setSending(false);}
   },[]);

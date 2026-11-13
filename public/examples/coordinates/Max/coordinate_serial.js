@@ -4,7 +4,7 @@ var line='', overflow=false;
 function finite(value){return typeof value==='number' && isFinite(value);}
 function msg_int(value){
     if(value===13)return;
-    if(value!==10){if(line.length<4096)line+=String.fromCharCode(value);else overflow=true;return;}
+    if(value!==10){if(line.length<8192)line+=String.fromCharCode(value);else overflow=true;return;}
     if(overflow){line='';overflow=false;return;}
     try{
         var frame=JSON.parse(line);

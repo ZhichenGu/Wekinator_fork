@@ -7,11 +7,12 @@ import { BAUD_RATES, type SerialMessage } from './serial';
 export type Mode = 'hand' | 'face' | 'pose';
 export type FeatureMode = 'shape' | 'path' | 'both';
 export type Point = { x: number; y: number; z?: number; visibility?: number };
-export type Frame = { aspectRatio?:number; blend?:number[]; t: number; points: Point[]; shape: number[]; root: [number, number]; scale: number };
+export type HandTracking = 'single' | 'dual' | 'mixed';
+export type Frame = { handCount?:1|2; handSide?:'left'|'right'; handRoots?:[number,number,number,number]; aspectRatio?:number; blend?:number[]; t: number; points: Point[]; shape: number[]; root: [number, number]; scale: number };
 export const MAX_SAMPLES_PER_ACTION = 100;
 export type Sample = { id: string; frames: Frame[]; duration: number; negative: boolean; split?: 'train'|'test'; testRound?:number; testValue?:number; lostBefore?:number[]; aspectRatio?: number };
-export type Action = { id: string; name: string; osc?:OscTarget; effect: 'indicator' | 'serial' | 'mqtt' | 'osc'; serial?: SerialMessage; mqtt?: MqttMessage; color: string; samples: Sample[]; trained: boolean; threshold: number; controlValue?:number };
-export type Project = { labBaseline?:boolean; lab?:{features:boolean;trim:boolean;ensemble:boolean}; id?:string; schemaVersion: 1; name: string; mode: Mode; feature: FeatureMode; focus?:number[]; learning?: 'dynamic'|'pose'|'continuous'|'region'|'relation'|'coordinates'; coordinates?:CoordinateConfig; relation?:RelationConfig; region?:RegionConfig; poseHoldSeconds?: number; actions: Action[]; mqtt?: BrokerConfig; serialBaudRate?: number; recordingDuration?: number; recordingDelay?: 0|1|3; updatedAt: string };
+export type Action = { handCount?:1|2; hand?:'any'|'left'|'right'; id: string; name: string; osc?:OscTarget; effect: 'indicator' | 'serial' | 'mqtt' | 'osc'; serial?: SerialMessage; mqtt?: MqttMessage; color: string; samples: Sample[]; trained: boolean; threshold: number; controlValue?:number };
+export type Project = { handTracking?:HandTracking; labBaseline?:boolean; lab?:{features:boolean;trim:boolean;ensemble:boolean}; id?:string; schemaVersion: 1; name: string; mode: Mode; feature: FeatureMode; focus?:number[]; learning?: 'dynamic'|'pose'|'continuous'|'region'|'relation'|'coordinates'; coordinates?:CoordinateConfig; relation?:RelationConfig; region?:RegionConfig; poseHoldSeconds?: number; actions: Action[]; mqtt?: BrokerConfig; serialBaudRate?: number; recordingDuration?: number; recordingDelay?: 0|1|3; updatedAt: string };
 export type Template = { actionId: string; duration: number; sequence: number[][]; energy: number; negative: boolean };
 
 export function appendSample(action: Action, sample: Sample): Action {
@@ -54,7 +55,7 @@ export function resample(frames: Frame[], count: number): Frame[] {
     const t = first + duration * i / (count - 1);
     while (j < frames.length - 2 && frames[j + 1].t < t) j++;
     const a = frames[j], b = frames[j + 1], u = Math.max(0, Math.min(1, (t-a.t)/(b.t-a.t || 1)));
-    return {...a, t, shape: a.shape.map((v,k) => v + (b.shape[k]-v)*u), root: [a.root[0]+(b.root[0]-a.root[0])*u, a.root[1]+(b.root[1]-a.root[1])*u], scale: a.scale+(b.scale-a.scale)*u};
+    return {...a, t, shape: a.shape.map((v,k) => v + (b.shape[k]-v)*u), root: [a.root[0]+(b.root[0]-a.root[0])*u, a.root[1]+(b.root[1]-a.root[1])*u], scale: a.scale+(b.scale-a.scale)*u,...(a.handRoots&&b.handRoots?{handRoots:a.handRoots.map((v,k)=>v+(b.handRoots![k]-v)*u) as Frame['handRoots']}:{})};
   });
 }
 
@@ -64,12 +65,12 @@ export function sequence(frames: Frame[], feature: FeatureMode, count = 60): num
   const scales = frames.map(f => f.scale).sort((a,b) => a-b), scale = scales[Math.floor(scales.length/2)];
   const root = sampled[0].root;
   return sampled.map(f => {
-    const path = [(f.root[0]-root[0])/scale, (f.root[1]-root[1])/scale];
+    const path = f.handRoots&&sampled[0].handRoots?f.handRoots.map((v,i)=>(v-sampled[0].handRoots![i])/scale):[(f.root[0]-root[0])/scale, (f.root[1]-root[1])/scale];
     if (feature === 'path') return path;
     if (feature === 'shape') return f.shape;
     // Equal group weight in RMS distance, rather than letting the many shape points dominate.
     const n = f.shape.length;
-    return [...f.shape.map(v => v * Math.sqrt((n+2)/(2*n))), ...path.map(v => v * Math.sqrt((n+2)/4))];
+    return [...f.shape.map(v => v * Math.sqrt((n+path.length)/(2*n))), ...path.map(v => v * Math.sqrt((n+path.length)/(2*path.length)))];
   });
 }
 export function energy(seq: number[][]): number {
@@ -130,6 +131,7 @@ export class TriggerGate {
   private lowSince: number | null = null;
   private lastFire = -Infinity;
   reset() { this.locked=false; this.lowSince=null; this.lastFire=-Infinity; }
+  pause() { this.lowSince=null; }
   update(scores: Record<string,number>, actions: Action[], now: number): string | null {
     const ranked = actions.filter(a=>a.trained).map(a=>({id:a.id,score:scores[a.id]??0,threshold:a.threshold})).sort((a,b)=>b.score-a.score);
     const best = ranked[0];
@@ -156,6 +158,8 @@ export function validateProject(data: unknown): Project {
   if(p.focus!==undefined&&(!Array.isArray(p.focus)||!p.focus.length||p.focus.length>(p.mode==='face'?478:33)||new Set(p.focus).size!==p.focus.length||p.focus.some((id,i)=>!validLandmark(p.mode,id)||(i>0&&id<=p.focus![i-1]))))throw new Error('关注部位无效。');
   if(p.learning!==undefined&&!['dynamic','pose','continuous','region','relation','coordinates'].includes(p.learning))throw new Error('不支持的学习方式。');
   if((p.learning==='region'||p.learning==='relation')&&p.actions.length>1)throw new Error('区域模式只支持一个触发项。');
+  if(p.handTracking!==undefined&&(p.mode!=='hand'||!['single','dual','mixed'].includes(p.handTracking)))throw Error('手数设置无效。');
+  if(p.handTracking&&p.handTracking!=='single'&&['region','relation'].includes(p.learning??''))throw Error('区域停留和捏合规则可在单手模式中创建。');
   if(p.coordinates!==undefined)p.coordinates=cleanCoordinateConfig(p.mode,p.coordinates);
   if(p.learning==='coordinates'&&p.actions.length!==1)throw new Error('坐标模式需要一个输出配置。');
   if(p.relation!==undefined&&(!validRelation(p.relation)||p.relation.points?.some(i=>!validLandmark(p.mode,i))))throw new Error('关系设置无效。');
@@ -169,6 +173,9 @@ export function validateProject(data: unknown): Project {
   const ids = new Set<string>();
   for (const a of p.actions) {
     if (!a || typeof a.id!=='string' || ids.has(a.id) || typeof a.name!=='string' || !a.name.trim() || a.name.length>60 || !['indicator','serial','mqtt','osc','scene','pulse'].includes(a.effect) || !/^#[0-9a-f]{6}$/i.test(a.color) || typeof a.trained!=='boolean' || !Number.isFinite(a.threshold) || a.threshold<.5 || a.threshold>.98 || !Array.isArray(a.samples) || a.samples.length>MAX_SAMPLES_PER_ACTION) throw new Error('动作数据不完整或超过限制。');
+    if(a.handCount!==undefined&&(p.mode!=='hand'||![1,2].includes(a.handCount)))throw Error('动作手数无效。');
+    if(a.hand!==undefined&&(p.mode!=='hand'||!['any','left','right'].includes(a.hand)))throw Error('动作手别无效。');
+    if(p.handTracking&&p.handTracking!=='mixed'&&(a.handCount??1)!==(p.handTracking==='dual'?2:1))throw Error('动作手数与项目不一致。');
     if(a.controlValue!==undefined&&(!Number.isFinite(a.controlValue)||a.controlValue<0||a.controlValue>1))throw new Error('目标数值须在 0 到 1 之间。');
     if(a.serial!==undefined&&(!a.serial||typeof a.serial.text!=='string'||a.serial.text.length>512||!['none','lf','crlf'].includes(a.serial.lineEnding)))throw new Error('串口发送配置无效。');
     if(['scene','pulse'].includes(a.effect))a.effect='indicator';
@@ -186,9 +193,12 @@ export function validateProject(data: unknown): Project {
       if(s.aspectRatio!==undefined&&(!Number.isFinite(s.aspectRatio)||s.aspectRatio<.1||s.aspectRatio>10))throw new Error('示例画面比例无效。');
       for (const [i,f] of s.frames.entries()) {
         if (!f || (f.blend!==undefined&&(!Array.isArray(f.blend)||f.blend.length>100||f.blend.some(v=>!Number.isFinite(v)))) || !Number.isFinite(f.t) || (i>0 && f.t<=s.frames[i-1].t) || !Array.isArray(f.shape) || f.shape.length<2 || f.shape.length>(p.mode==='face'?956:200) || f.shape.some(v=>!Number.isFinite(v)) || !Array.isArray(f.root) || f.root.length!==2 || f.root.some(v=>!Number.isFinite(v)) || !Number.isFinite(f.scale) || f.scale<.015 || !Array.isArray(f.points) || f.points.length>500 || f.points.some(pt=>!pt || !Number.isFinite(pt.x) || !Number.isFinite(pt.y))) throw new Error('示例包含无效坐标或时间戳。');
+        if(f.handCount!==undefined&&![1,2].includes(f.handCount)||f.handSide!==undefined&&!['left','right'].includes(f.handSide)||f.handRoots!==undefined&&(!Array.isArray(f.handRoots)||f.handRoots.length!==4||f.handRoots.some(v=>!Number.isFinite(v))))throw Error('录制手数或手别无效。');
+        if(p.handTracking&&((f.handCount??1)!==(a.handCount??1)||f.points.length!==((a.handCount??1)*21)||(a.handCount===2&&!f.handRoots)||(a.handCount!==2&&a.hand&&a.hand!=='any'&&f.handSide!==a.hand)))throw Error('录制与动作的手数或手别不一致。');
         dimension ??= f.shape.length;
         if (f.shape.length!==dimension) throw new Error('示例的特征维度不一致，请重新录制。');
       }
+      if(p.mode==='hand'&&new Set(s.frames.map(f=>f.handSide).filter(Boolean)).size>1)throw Error('一次录制需要使用同一只手。');
       if (Math.abs(s.frames.at(-1)!.t-s.frames[0].t-s.duration)>100) throw new Error('示例时长与时间戳不一致。');
     }
   }

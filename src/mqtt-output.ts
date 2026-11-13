@@ -1,3 +1,4 @@
+import {validateCoordinatePayload,COORDINATE_PAYLOAD_LIMIT} from './coordinate-payload';
 export type BrokerConfig = {url:string;username:string;clientId:string;passwordRequired:boolean};
 export type MqttMessage = {topic:string;payload:string;qos:0|1};
 export const DEFAULT_MQTT_MESSAGE:MqttMessage={topic:'project/action',payload:'YES',qos:0};
@@ -9,9 +10,10 @@ export function validateBroker(config:BrokerConfig,securePage=false):BrokerConfi
   if(config.username.length>256||config.clientId.length>128)throw new Error('用户名或 Client ID 过长。');
   return {url:config.url.trim(),username:config.username,clientId:config.clientId,passwordRequired:config.passwordRequired};
 }
-export function validateMqttMessage(message:MqttMessage):void {
+export function validateMqttMessage(message:MqttMessage,coordinates=false):void {
   if(typeof message.topic!=='string'||!message.topic.trim()||message.topic.length>512||/[+#\0]/.test(message.topic))throw new Error('Topic 不能为空，也不能包含发布通配符 +、# 或空字符。');
-  if(typeof message.payload!=='string'||!message.payload.length||message.payload.length>512)throw new Error('消息内容需为 1–512 个字符。');
+  if(coordinates)validateCoordinatePayload(message.payload);
+  if(typeof message.payload!=='string'||!message.payload.length||message.payload.length>(coordinates?COORDINATE_PAYLOAD_LIMIT:512))throw new Error('消息内容需为 1–512 个字符。');
   if(message.qos!==0&&message.qos!==1)throw new Error('仅支持 QoS 0 或 1。');
 }
 export interface MqttPeer {
@@ -57,8 +59,8 @@ export class MqttConnection {
       peer.connect();
     });
   }
-  async send(message:MqttMessage):Promise<void>{
-    validateMqttMessage(message);
+  async send(message:MqttMessage,coordinates=false):Promise<void>{
+    validateMqttMessage(message,coordinates);
     const peer=this.peer;
     if(!this.connected||!peer?.connected)throw new Error('MQTT 未连接，没有发送消息。');
     if(this.sending)throw new Error('上一条 MQTT 消息仍在发送，本次未发送。');

@@ -46,3 +46,28 @@ test('coordinate detector retains raw partial points and closes an image that fi
     await assert.rejects(d.detect({} as HTMLVideoElement,3),{name:'AbortError'});
   }finally{globalThis.Worker=originalWorker;globalThis.createImageBitmap=originalBitmap;}
 });
+
+test('coordinate detector changes hand options on frames without rebuilding the worker',async()=>{
+ const originalWorker=globalThis.Worker,originalBitmap=globalThis.createImageBitmap;
+ const messages: {type:string;handOptions?:unknown}[]=[];
+ let created=0;
+ class ConfigurableWorker {
+   onmessage:((e:{data:unknown})=>void)|undefined;onerror:unknown;
+   constructor(){created++;}
+   postMessage(message:{type:string;handOptions?:unknown}){
+     messages.push(message);
+     queueMicrotask(()=>this.onmessage?.({data:message.type==='init'?{type:'ready'}:{type:'result',points:[]}}));
+   }
+   terminate(){}
+ }
+ globalThis.Worker=ConfigurableWorker as unknown as typeof Worker;
+ globalThis.createImageBitmap=(()=>Promise.resolve({width:640,height:360,close(){}})) as typeof createImageBitmap;
+ try{
+   const detector=await createCoordinateDetector('hand','http://localhost/',new AbortController().signal);
+   await detector.detect({} as HTMLVideoElement,1,{handMode:'single',hand:'right'});
+   await detector.detect({} as HTMLVideoElement,2,{handMode:'dual',hand:'right'});
+   assert.equal(created,1);
+   assert.deepEqual(messages.slice(1).map(m=>m.handOptions),[{handMode:'single',hand:'right'},{handMode:'dual',hand:'right'}]);
+   detector.close();
+ }finally{globalThis.Worker=originalWorker;globalThis.createImageBitmap=originalBitmap;}
+});

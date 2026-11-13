@@ -1,3 +1,4 @@
+import {actionHandKey,storedHandInputs,type HandInputKey,type HandInputs} from './hand-learning';
 import {labEnabled,buildLabTemplates,labMatch} from './lab-motion';
 import {buildTemplates,match,TriggerGate,type Action,type Frame,type Project,type Sample,type Template} from './core';
 export type LearningMode='dynamic'|'pose'|'continuous'|'region'|'relation'|'coordinates';
@@ -57,6 +58,7 @@ export class PoseGate{
   private last=-Infinity;
   constructor(private holdMs=350){}
   reset(){this.activeId=null;this.pendingId=null;this.since=0;this.unknownSince=null;this.last=-Infinity;}
+  pause(){this.pendingId=null;this.unknownSince=null;this.last=-Infinity;}
   update(scores:Record<string,number>,actions:Action[],now:number):string|null{
     if(now-this.last>220)this.pendingId=null;
     this.last=now;
@@ -75,26 +77,51 @@ export class Recognizer{
   readonly templates:Template[];
   readonly prototypes:PosePrototype[];
   readonly mode:LearningMode;
+  readonly handReaders=new Map<HandInputKey,Recognizer>();
   private buffer:Frame[]=[];
   private dynamicGate=new TriggerGate();
   private poseGate:PoseGate;
   private lastFrame=-Infinity;
+  private handSide:Frame['handSide'];
   private lastCheck=-Infinity;
   private result:RecognitionResult={scores:{},eventId:null,state:'waiting',labelId:null,locked:false};
-  constructor(private project:Project,models?:{templates:Template[];prototypes:PosePrototype[]}){
+  constructor(private project:Project,models?:{templates:Template[];prototypes:PosePrototype[];handReaders?:ReadonlyMap<HandInputKey,Recognizer>}){
     this.mode=learningMode(project);
     this.templates=models?.templates??(this.mode==='dynamic'?(labEnabled(project)?buildLabTemplates(project):buildTemplates(project.actions,project.feature)):[]);
     this.prototypes=models?.prototypes??(this.mode==='pose'?buildPosePrototypes(project.actions):[]);
     this.poseGate=new PoseGate((project.poseHoldSeconds??.35)*1000);
+    if(project.mode==='hand'&&project.handTracking){
+      for(const key of new Set(project.actions.map(a=>actionHandKey(project,a)))){
+        this.handReaders.set(key,new Recognizer({...project,handTracking:undefined,actions:project.actions.filter(a=>actionHandKey(project,a)===key)},models?.handReaders?.get(key)));
+      }
+    }
   }
-  get ready(){return this.mode==='pose'?this.prototypes.some(p=>!p.negative):this.templates.some(t=>!t.negative);}
+  get ready():boolean{if(this.handReaders.size)return [...this.handReaders.values()].some(reader=>reader.ready);return this.mode==='pose'?this.prototypes.some(p=>!p.negative):this.templates.some(t=>!t.negative);}
+  stepHands(inputs:HandInputs,now:number):RecognitionResult{
+    const scores:Record<string,number>={};let present=false;
+    for(const [key,reader] of this.handReaders){
+      const frame=inputs[key];present ||= !!frame&&reader.ready;
+      Object.assign(scores,reader.step(frame,now).scores);
+    }
+    const dualActions=this.project.actions.filter(a=>actionHandKey(this.project,a)==='dual');
+    const candidates=winningAction(scores,dualActions)?dualActions:this.project.actions;
+    if(!present){this.poseGate.pause();this.dynamicGate.pause();}
+    const eventId=!present?null:this.mode==='pose'?this.poseGate.update(scores,candidates,now):this.dynamicGate.update(scores,candidates,now);
+    const labelId=this.mode==='pose'?winningAction(scores,candidates):null;
+    const locked=this.mode==='pose'?!!this.poseGate.activeId:this.dynamicGate.locked;
+    return this.result={scores,eventId,labelId,locked,state:!present?'lost':this.mode==='pose'?(!labelId?'unknown':this.poseGate.activeId===labelId?'recognized':'confirming'):locked?'locked':'waiting'};
+  }
   step(frame:Frame|null,now:number):RecognitionResult{
+    if(this.handReaders.size)return this.stepHands(storedHandInputs(frame),now);
     if(!frame){
-      if(now-this.lastFrame>220)this.buffer=[];
-      if(this.mode==='pose')this.poseGate.update({},this.project.actions,now);else this.dynamicGate.update({},this.project.actions,now);
+      if(this.project.mode==='hand'||now-this.lastFrame>220)this.buffer=[];
+      if(this.project.mode==='hand'){this.lastCheck=-Infinity;this.poseGate.pause();this.dynamicGate.pause();}
+      else if(this.mode==='pose')this.poseGate.update({},this.project.actions,now);else this.dynamicGate.update({},this.project.actions,now);
       return this.result={scores:{},eventId:null,state:'lost',labelId:null,locked:this.mode==='pose'?!!this.poseGate.activeId:this.dynamicGate.locked};
     }
-    if(now-this.lastFrame>220){this.buffer=[];this.lastCheck=-Infinity;this.poseGate.update({},this.project.actions,now);}
+    if(frame.handSide&&this.handSide&&frame.handSide!==this.handSide){this.buffer=[];this.lastCheck=-Infinity;this.poseGate.reset();}
+    this.handSide=frame.handSide;
+    if(now-this.lastFrame>220){this.buffer=[];this.lastCheck=-Infinity;if(this.project.mode==='hand'){this.poseGate.pause();this.dynamicGate.pause();}else this.poseGate.update({},this.project.actions,now);}
     this.lastFrame=now;this.buffer.push(frame);this.buffer=this.buffer.filter(f=>now-f.t<=11000);
     if(now-this.lastCheck<100)return {...this.result,eventId:null};
     this.lastCheck=now;

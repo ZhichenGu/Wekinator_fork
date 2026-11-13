@@ -38,6 +38,12 @@ class CallbackTests(unittest.TestCase):
             self.module.write_frame(self.dat, payload)
             self.assertEqual(self.dat.table.rows, before)
         self.assertEqual(len(self.errors), 7)
+    def test_full_two_hand_frame(self):
+        values = {f'{side}_point_{point}_{axis}': .25 for side in ('left', 'right') for point in range(21) for axis in ('x', 'y', 'z')}
+        self.module.write_frame(self.dat, json.dumps({'mode': 'hand', 'values': values}))
+        self.assertEqual(len(self.dat.table.rows), 127)
+        self.assertEqual(self.errors, [])
+
     def test_topic_and_retained_messages(self):
         self.module.TOPIC = 'class/group/coordinates'
         self.module.onConnect(self.dat)

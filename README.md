@@ -14,13 +14,18 @@
 | macOS | [下载 Apple Silicon 0.79（DMG）](https://github.com/ZhichenGu/ml-play/releases/download/v0.79.0/Platform-0.79.0-macOS-arm64.dmg)。打开后将 Platform 拖入「应用程序」。已在 macOS 15.7.5 测试，尚未经过 Apple 公证。 |
 | Windows | [下载 Intel/AMD 64 位测试版（EXE）](https://github.com/ZhichenGu/ml-play/releases/download/v0.79.0/Platform-0.79.0-Windows-x64-Setup.exe)。安装包未签名，Windows 10 和 11 的真机安装与设备权限待测。 |
 
-[查看 v0.79.0 发布说明和校验文件](https://github.com/ZhichenGu/ml-play/releases/tag/v0.79.0)。下文对应 0.79 源码与桌面包；线上网页版本以实际部署为准。Windows 安装包供测试，尚未完成 Win10/Win11 真机验收。
+[查看 v0.79.0 发布说明和校验文件](https://github.com/ZhichenGu/ml-play/releases/tag/v0.79.0)。下文对应 0.94 正式源码，桌面安装包为 0.79。线上网页版本以实际部署为准。Windows 安装包供测试，尚未完成 Win10/Win11 真机验收。
 
-### 直接输出追踪坐标（0.79）
 
-手部、面部和身体追踪均可选择“直接输出坐标”。开启摄像头后选择最多四个点，按 P 设置平滑与发送频率；在输出方式中选 Serial、MQTT 或 OSC，打开居中窗口，为点命名并勾选 X/Y/Z，完成连接和测试后“应用并返回”，再点击“开始输出”。XY 与镜像预览一致，Z 为相对深度。项目自动保存在当前浏览器。
+### 手部交互范围（0.94）
 
-0.79 的“案例代码”已包含 Processing、openFrameworks、Max/MSP、p5.js 和 TouchDesigner 的教程、官方资料链接与下载。TouchDesigner 支持 OSC In CHOP、MQTT Client DAT 和 Serial DAT。接收项目、消息格式、串口链路说明与待验证项见[坐标案例说明](public/examples/coordinates/README.md)。网页版需下载新版 OSC 桥接。0.79 桌面包已包含坐标模式；旧 0.75 包未包含此功能，不能导入坐标项目。线上网页版本以部署结果为准。
+动作匹配、姿态分类、连续控制、区域停留和动作关系使用单手，并保持当前控制手，另一只手入镜不抢占；持续丢失后才允许接替。录制中检测到换手会取消该次录制，不保存混合示范。仅“直接输出手部坐标”提供单手/双手选择；单手自动追踪一只可用的手，不要求选择左右。创建时固定项目手数，工作台不重复切换；双手项目可选单手输出或双手输出，左右手独立输出。自动单手输出优先保持当前手，短暂遮挡暂停，持续离开后才由另一只接替；原手回来不抢占。双手/混合动作学习暂缓开放，0.84 实验项目和录制保留，可导出备份，不自动转换为单手项目。本版源码已合入 main，网页以部署结果为准。桌面安装包仍为 0.79。
+
+### 直接输出追踪坐标（0.94）
+
+手部、面部和身体追踪均可选择“直接输出坐标”。手部支持单手 21 点、双手 42 点和推荐组合，面部/身体当前最多四点。开启摄像头后选择所需点，按 P 设置平滑与发送频率；在输出方式中选 Serial、MQTT 或 OSC，打开居中窗口，为点命名并勾选 X/Y/Z，完成连接和测试后“应用并返回”，再点击“开始输出”。XY 与镜像预览一致，Z 为相对深度。项目自动保存在当前浏览器。
+
+本版“案例代码”已包含 Processing、openFrameworks、Max/MSP、p5.js 和 TouchDesigner 的教程、官方资料链接与下载。TouchDesigner 支持 OSC In CHOP、MQTT Client DAT 和 Serial DAT。接收项目、消息格式、串口链路说明与待验证项见[坐标案例说明](public/examples/coordinates/README.md)。网页版需下载新版 OSC 桥接。已发布的 0.79 桌面包支持原单手坐标模式；本版双手及录制保护需重新打包才会进入桌面应用。线上网页版本以部署结果为准。
 
 ### 可以做什么
 
@@ -95,13 +100,18 @@ A small tool inspired by Wekinator, built for interactive experiments with a cam
 | macOS | [Download for Apple Silicon (DMG, 0.79)](https://github.com/ZhichenGu/ml-play/releases/download/v0.79.0/Platform-0.79.0-macOS-arm64.dmg). Open it and drag Platform into Applications. Tested on macOS 15.7.5. This build has not been notarized by Apple. |
 | Windows | [Download the Intel/AMD x64 preview (EXE)](https://github.com/ZhichenGu/ml-play/releases/download/v0.79.0/Platform-0.79.0-Windows-x64-Setup.exe). The installer is unsigned. Installation and device access on Windows 10 and 11 are awaiting real-device tests. |
 
-[Read the v0.79.0 release notes and find the checksums](https://github.com/ZhichenGu/ml-play/releases/tag/v0.79.0). The steps below describe the 0.79 source and desktop app; the online web version depends on deployment. The Windows installer is for testing and still awaits Windows 10/11 real-device validation.
+[Read the v0.79.0 release notes and find the checksums](https://github.com/ZhichenGu/ml-play/releases/tag/v0.79.0). The steps below describe the 0.94 source. Desktop installers are version 0.79; the online web version depends on deployment. The Windows installer is for testing and still awaits Windows 10/11 real-device validation.
 
-### Direct tracking coordinates (0.79)
 
-Hand, face and body projects can stream coordinates directly. Select up to four landmarks. Press P for smoothing and rate settings; choose Serial, MQTT or OSC to open the naming window, name each point, choose X/Y/Z, connect and test, then Apply and return and Start output. XY follows the mirrored preview and Z is relative depth. Project settings save automatically in the current browser.
+### Hand interaction scope (0.94)
 
-The 0.79 Examples section includes downloadable projects, guides and official references for Processing, openFrameworks, Max/MSP, p5.js and TouchDesigner. TouchDesigner supports OSC In CHOP, MQTT Client DAT and Serial DAT. See the [coordinate receiver guide](public/examples/coordinates/README.md) for formats, serial topology and pending receiver tests. Web OSC needs the updated bridge. The 0.79 desktop app includes coordinate mode. Older v0.75 installers cannot import coordinate projects; the online web version depends on deployment.
+Action matching, pose classification, continuous control, dwell and relation rules keep one active hand; a second hand does not preempt it. Handover follows sustained loss. A detected hand change during recording cancels the take instead of saving a mixed-hand example. Only direct coordinate output offers Single/Two hands. Single automatically tracks one available hand, without asking for left or right. Project capacity is fixed at creation. Two-hand projects offer single-hand or two-hand output, with independent channels. Automatic single-hand output keeps the current hand, pauses on brief occlusion and hands over only after sustained loss; the returning hand does not take control back. Two-hand/mixed learning is on hold. Existing 0.84 experimental projects and recordings remain exportable and are not converted into single-hand data. These changes are included in main. The website version depends on deployment. Desktop installers remain at 0.79.
+
+### Direct tracking coordinates (0.94)
+
+Hand, face and body projects can stream coordinates directly. Hands support all 21 landmarks on one hand or all 42 on both hands, plus presets. Face and body currently support four landmarks. Press P for smoothing and rate settings; choose Serial, MQTT or OSC to open the naming window, name each point, choose X/Y/Z, connect and test, then Apply and return and Start output. XY follows the mirrored preview and Z is relative depth. Project settings save automatically in the current browser.
+
+The source version’s Examples section includes downloadable projects, guides and official references for Processing, openFrameworks, Max/MSP, p5.js and TouchDesigner. TouchDesigner supports OSC In CHOP, MQTT Client DAT and Serial DAT. See the [coordinate receiver guide](public/examples/coordinates/README.md) for formats, serial topology and pending receiver tests. Web OSC needs the updated bridge. Published v0.79 desktop installers include the original single-hand coordinate mode. The updated hand features require new desktop builds. Desktop changes require rebuilding; the online web version depends on deployment.
 
 ### What it does
 

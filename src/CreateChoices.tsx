@@ -2,7 +2,7 @@ import React from 'react';
 import {MethodChoice} from './MethodChoice';
 import {recognitionHelp} from './recognition-help';
 import {Activity,Camera,AudioLines,Check,X,type LucideIcon} from 'lucide-react';
-import {t} from './i18n';import type {Mode} from './core';import type {LearningMode} from './learning';
+import {t} from './i18n';import type {Mode,HandTracking} from './core';import type {LearningMode} from './learning';
 export type InputCategory='tracking'|'vision'|'audio';
 const methods=[['dynamic','完成后触发一次'],['pose','输出姿态类别'],['continuous','输出连续数值（0–1）'],['region','停留达标时触发'],['relation','条件成立时触发'],['coordinates','持续输出 XY / XYZ']] as const;
 const goals = {
@@ -31,7 +31,7 @@ const goals = {
     "relation": "手腕高于肩膀"
   }
 };
-export function CreateChoices({category,onCategory,mode,onMode,learning,onLearning,visual,onVisual,audio,onAudio,modes,footer}:{footer?:React.ReactNode;category:InputCategory|null;onCategory:(v:InputCategory)=>void;mode:Mode;onMode:(v:Mode)=>void;learning:LearningMode;onLearning:(v:LearningMode)=>void;visual:'presence'|'count'|'condition';onVisual:(v:'presence'|'count'|'condition')=>void;audio:'keyword'|'event'|'volume';onAudio:(v:'keyword'|'event'|'volume')=>void;modes:Record<Mode,{name:string;description:string;icon:LucideIcon}>}){
+export function CreateChoices({category,onCategory,mode,onMode,learning,onLearning,handTracking='single',onHandTracking,visual,onVisual,audio,onAudio,modes,footer}:{footer?:React.ReactNode;category:InputCategory|null;onCategory:(v:InputCategory)=>void;mode:Mode;onMode:(v:Mode)=>void;learning:LearningMode;onLearning:(v:LearningMode)=>void;handTracking?:HandTracking;onHandTracking?:(v:HandTracking)=>void;visual:'presence'|'count'|'condition';onVisual:(v:'presence'|'count'|'condition')=>void;audio:'keyword'|'event'|'volume';onAudio:(v:'keyword'|'event'|'volume')=>void;modes:Record<Mode,{name:string;description:string;icon:LucideIcon}>}){
  const dialog=React.useRef<HTMLDialogElement>(null);
  const beganOutside=React.useRef(false);
  function outside(event:React.PointerEvent<HTMLDialogElement>|React.MouseEvent<HTMLDialogElement>){
@@ -48,7 +48,7 @@ export function CreateChoices({category,onCategory,mode,onMode,learning,onLearni
  <header><h2 id="choice-dialog-title">{t(category==='tracking'?modes[mode].name:category==='vision'?'视觉识别':'声音识别')}</h2><button className="icon-button" aria-label={t('关闭选择窗口')} onClick={()=>dialog.current?.close()}><X size={18}/></button></header>
  <div className="choice-dialog-body">{category==='tracking'?<><h2 className="choice-heading">{t('你想实现什么交互？')}</h2><div className="learning-options" role="group" aria-label={t('学习方式')}>{methods.map(([key,title])=><MethodChoice key={key} mode={mode} method={key} title={goals[mode][key]} subtitle={title} provider={key==='region'||key==='relation'||key==='coordinates'?'无需录制示范':undefined} selected={learning===key} onSelect={()=>onLearning(key)}/>)}</div></>:category==='vision'?<><h2 className="choice-heading">{t('识别方式')}</h2><div className="learning-options" role="group" aria-label={t('视觉识别方式')}>{([['presence','物体检测 · API'],['count','人数与物体计数'],['condition','自定义视觉条件']] as const).map(([id,name])=><MethodChoice key={id} title={name} help={recognitionHelp[id]} provider="DeepSeek / OpenAI" selected={visual===id} onSelect={()=>onVisual(id)}/>)}</div></>:
  <><h2 className="choice-heading">{t('声音处理方式')}</h2><div className="learning-options" role="group" aria-label={t('声音处理方式')}>{([['keyword','语音关键词'],['event','声音事件'],['volume','音量控制']] as const).map(([id,name])=><MethodChoice key={id} title={name} help={recognitionHelp[id]} provider={id==='volume'?'本机处理':id==='keyword'?'OpenAI / 科大讯飞':'OpenAI API'} selected={audio===id} onSelect={()=>onAudio(id)}/>)}</div></>}
- </div><footer>{footer}</footer></dialog>
+ </div><footer className={category==='tracking'&&mode==='hand'&&learning==='coordinates'?'coordinate-create-footer':undefined}>{category==='tracking'&&mode==='hand'&&learning==='coordinates'&&<div className="hand-create-scope coordinate-create-options"><div className="coordinate-hand-toggle" role="group" aria-label={t('坐标输出手数')}>{(['single','dual'] as const).map(value=><button key={value} aria-pressed={(handTracking==='single'?'single':'dual')===value} onClick={()=>onHandTracking?.(value)}>{t(value==='single'?'单手':'双手')}</button>)}</div><p>{t(handTracking==='single'?'每次自动追踪一只手。':'可单手使用，也可双手同时输出。')}</p></div>}{footer}</footer></dialog>
  </section>}
  </div>;
 }

@@ -3,6 +3,12 @@
 These are receiver source examples for the current coordinate feature. The published v0.75 desktop installers do not include coordinate mode. Web changes appear online only after deployment; changing this source folder does not update installed apps.
 这些是当前坐标功能的接收源码示例。已发布的 0.75 桌面包没有坐标模式；网页需部署后才更新，源码修改也不会更新已安装的桌面应用。
 
+## Full hand output / 整手输出（0.82 预览）
+
+The hand coordinate workspace supports all 21 landmarks on one hand or 42 on both hands. Select Whole hand in the presets, or Select all 42 landmarks for both hands. Serial/MQTT send one JSON frame, up to 126 named axes. Use the updated OSC bridge for full-hand batches. OSC sends one Float for each selected axis. The default 10 Hz is an upper limit; slower connections naturally reduce the effective rate. These changes require the 0.82 preview source; existing desktop installers need rebuilding.
+
+手部选点支持“整只手 · 21 点”和“双手全部 42 点”。Serial/MQTT 每帧一个 JSON，最多 126 个命名轴；OSC 须下载并重启本目录的新桥接，逐轴发送 Float。默认 10 Hz 为上限，实际发送速度受连接限制。TouchDesigner 回调可接收全部字段；其他示例默认仅显示 index_tip，按所选点的名称修改字段和地址即可。此功能先在 0.82 预览提供，桌面版需要重新打包。
+
 ## First connection / 先跑通一个连接
 
 1. Create a hand coordinate project: tracking → hand → direct coordinates. Keep point 8, output name `index_tip`, X/Y, 10 Hz and light smoothing.

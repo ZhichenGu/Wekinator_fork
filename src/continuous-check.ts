@@ -15,7 +15,7 @@ function quantile(sorted:number[], fraction:number) {
 }
 
 export function checkContinuous(project:Project, progress?:(done:number,total:number)=>void, testRound?:number):ValueReport {
-  const anchors=buildAnchors(project.actions);
+  const anchors=buildAnchors(project.actions,project);
   const training=new Set<string>(), seen=new Set<string>();
   const tests:{actionId:string; sample:Sample}[]=[];
   for (const action of project.actions) {
