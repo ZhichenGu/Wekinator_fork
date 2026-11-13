@@ -1,87 +1,106 @@
 # Platform coordinate receivers / 坐标接收案例
 
-Start with hand tracking, point 8 (index fingertip), XY, 10 Hz, smoothing light.
-在 Platform 新建项目 → 动作追踪 → 手部 → 直接输出手部坐标。默认点 8 为食指尖。按 P 设置连接。先用“测试发送”，再开启摄像头与“开始输出”。没有目标时测试发送使用 0.5、0.5；此值只用于连接检查。
+These are receiver source examples for the current coordinate feature. The published v0.75 desktop installers do not include coordinate mode. Web changes appear online only after deployment; changing this source folder does not update installed apps.
+这些是当前坐标功能的接收源码示例。已发布的 0.75 桌面包没有坐标模式；网页需部署后才更新，源码修改也不会更新已安装的桌面应用。
 
-## Screenshots / 实际界面
+## First connection / 先跑通一个连接
+
+1. Create a hand coordinate project: tracking → hand → direct coordinates. Keep point 8, output name `index_tip`, X/Y, 10 Hz and light smoothing.
+2. Run one desktop receiver below on UDP 9000. For the web edition, run the **updated** `platform_osc_bridge.mjs` on the browser computer; desktop builds that include coordinates use their built-in OSC sender.
+3. In Platform press P → Output → OSC. Set the base address `/platform/hand`, open Connection and test, set receiver `127.0.0.1` and port `9000`, and apply any changed target.
+4. Test send while the naming window is open: it sends the draft axes with X=0.5, Y=0.5, Z=0 as selected. The example dot briefly appears at the centre. This checks the connection, not camera recognition.
+5. Apply and return, enable the camera, then Start output. On another receiving computer, use its private IPv4 instead of 127.0.0.1. Leave the web bridge on the browser computer.
+
+先建手部坐标项目，保持默认食指尖点 8、名称 index_tip、X/Y、10 Hz。只开一个 UDP 9000 接收程序。网页版需在浏览器所在电脑启动新版桥接。按 P 选 OSC，基础地址 /platform/hand，展开连接参数，填写接收端 IP、端口并应用修改。先测试发送，再“应用并返回”、开启摄像头、开始输出。测试用中间值只检查链路。
+
+The Processing, openFrameworks, Max Serial and p5.js examples start with **hand / index_tip / point 8**. For face, pose, other points or names, edit their mode checks, OSC paths or JSON keys accordingly. TouchDesigner’s JSON callback accepts all three modes. They are not automatic multi-point visualizers.
+Processing、openFrameworks、Max Serial 和 p5.js 默认只演示 hand / index_tip / 点 8；改脸部、身体或点名称时须改接收代码。TouchDesigner JSON 回调支持三种 mode。示例不是自动显示所有点的通用工作台。
 
 ![Platform coordinate settings](screenshots/platform.jpg)
 
 ## Message contract / 消息格式
 
-XY follows the mirrored preview. X grows to the right, Y grows downward. Coordinates are normalized and clamped to 0–1. XYZ adds model-relative depth, not camera distance in centimeters. Hand depth is relative to the wrist, face depth to the head, pose depth to the hip center. At most four points are sent. Values are rounded to five decimals. Detection is single-target.
-XY 与镜像画面一致，向右与向下增大，范围 0–1。Z 为模型相对深度，手、脸、身体各有自己的参考位置。最多输出四个点，保留五位小数，当前为单目标追踪。
+Press P → Output → Serial / OSC / MQTT to name points and select axes. Names use 1–16 ASCII letters, digits or underscores, start with a letter and must differ between points. Apply and return saves names and axes; Esc or the backdrop discards that draft. Connection controls have their own save/apply actions and are not rolled back by cancelling names. Test send uses the current naming draft, while running uses the applied configuration.
+名称限 1–16 个英文字母、数字或下划线，以字母开头，各点不同。“应用并返回”保存名称与选轴；Esc 或点窗口外放弃该草稿，已保存的连接参数保留。测试用草稿，运行用已应用设置。
 
-Serial uses one UTF-8 JSON object per LF-terminated line. MQTT uses the same JSON in each message, default topic platform/coordinates. Example:
-Serial 每行一帧 JSON，以 LF 结束；MQTT 每条消息一帧 JSON，默认主题 platform/coordinates。
+Serial: one UTF-8 JSON object per LF-terminated line, default 115200 baud. MQTT: the same JSON per message, default topic `platform/coordinates`. This is **not** the plain-number payload used by the Arduino numeric examples. Only selected axes appear:
+Serial 每行一帧 JSON，以 LF 结束，默认 115200。MQTT 每条消息一帧，默认主题 platform/coordinates。不要用只收纯数字的 Arduino 示例接坐标 JSON。只包含勾选的轴：
 
 ```json
-{"mode":"hand","t":12345,"points":[{"id":8,"x":0.42,"y":0.63,"z":-0.08}]}
+{"mode":"hand","t":12345,"values":{"index_tip_x":0.42,"index_tip_y":0.63,"wrist_x":0.51,"wrist_y":0.72}}
 ```
 
-The t field is sender-local monotonic milliseconds, not a synchronized clock. In XY mode the z field is absent. Configure mode and point ID in your receiver when switching to face (default 1) or pose (default 15).
-t 是发送页的单调时钟毫秒，不用于跨电脑同步；XY 模式不带 z。切到脸或身体后，修改接收代码的 mode 和点编号，默认分别为 face/1、pose/15。
+OSC: one Float per address, for example `/platform/hand/index_tip/x`, `/platform/hand/index_tip/y`, and `/platform/hand/index_tip/z` only if Z is selected. These are separate UDP datagrams, not an atomic frame. XY increases right/down in the mirrored preview, clamped to 0–1. Z is model-relative depth, not metres or camera distance. JSON `t` is sender-local monotonic milliseconds, not a shared clock.
+OSC 每轴一个地址、一个 Float。多个轴是独立 UDP 包，不能保证同一时刻到达。XY 与镜像画面一致，右下递增，范围 0–1；Z 为相对深度，不是米或摄像头距离。t 是发送页的单调毫秒时钟，不是跨电脑统一时钟。
 
-OSC uses base address /platform/hand, then adds the point ID. Example /platform/hand/8 has two float arguments (x y) or three (x y z). Face and pose default to /platform/face and /platform/pose. Port defaults to UDP 9000. Each point is a separate datagram, so multi-point OSC is not frame-atomic.
-OSC 默认基础地址 /platform/hand，程序自动追加点编号。/platform/hand/8 带两个或三个浮点参数。脸与身体基础地址分别为 /platform/face、/platform/pose。每个点各一条消息，多点之间可能有 UDP 丢包或先后差异。
+Old 0.77 coordinate projects retain `/platform/hand/8` with XY/XYZ Float vectors and JSON `points` arrays until names and axes are applied. Processing, openFrameworks and the JSON parsers support that legacy format. The supplied Max OSC patch demonstrates **named axes only**; edit its route/unpack objects to receive a legacy vector, or apply named axes in Platform.
+旧 0.77 项目应用名称前保留按点编号的 OSC 向量和 points 数组。随附解析代码兼容旧格式，但 Max OSC 工程仅展示新命名轴；可在 Platform 应用命名设置，或自行调整 route/unpack 接旧向量。
 
-If any selected point is missing, out of confidence or lacks requested Z, the sender pauses the entire frame and resets smoothing. On recovery it resumes from current coordinates. No zero reset or loss message is sent. Receivers should expire values after 0.8 seconds (increase this if you import a slower rate). Never use the sender t as a receiver timeout clock.
-任一选中点不可用时整帧暂停，恢复后从当前坐标继续；停止和丢失都不会发送零值。接收端建议按本机收到消息的时间设置 0.8 秒超时，低频项目自行加长，避免继续使用陈旧坐标。
+If any selected point is missing or low-confidence, the sender pauses the entire frame. Recovery restarts smoothing from current coordinates. No zero reset or loss message is sent. Use the receiver’s local receipt time to expire values after about 0.8 seconds (increase for slower imported rates). Drawing examples retain the last/default values of omitted axes; start with X/Y selected. Max number boxes hold their values on loss, so add a receiver timeout for an installation.
+选中任一点丢失或低可信时整帧暂停，恢复后从当前位置重新平滑，不自动发零或丢失消息。接收端用本机接收时间做约 0.8 秒超时，导入低频项目可加长。绘图示例对未发送轴保留上次值或初值，首次建议选 X/Y。Max 数框丢失后保留最后值，装置自行加入超时。
 
 ## Processing
 
-Open Processing/CoordinateReceiver/CoordinateReceiver.pde in Java mode. Install oscP5 in the library manager, run the sketch, select Platform OSC and use 127.0.0.1, 9000, /platform/hand. The dot follows the fingertip and disappears on timeout. Close other UDP 9000 listeners before running.
-用 Java 模式打开 PDE，安装 oscP5。先运行接收草图，再在 Platform 测试发送。圆点随食指尖移动，超时后隐藏。
+Open `Processing/CoordinateReceiver/CoordinateReceiver.pde` in Java mode and install oscP5 via the library manager. Run, then use the first-connection settings above. The dot moves with the fingertip and disappears after timeout. Serial parsing is optional: set `USE_SERIAL=true` and choose a receiving port from `Serial.list()`. It needs the two-ended serial link described below.
+用 Java 模式打开 PDE 并安装 oscP5，运行后按上方设置发送。Serial 为可选路径，改 USE_SERIAL 与接收端口，需要真实双端链路。
 
-The sketch also includes Serial JSON parsing. Set USE_SERIAL=true and choose the receiving port from Serial.list(). The Serial library is bundled with Processing.
-草图也带有 Serial 接收，可改 USE_SERIAL 与端口编号。两端需要真实可通信的链路，见下方 Serial 说明。
-Official docs https://sojamo.de/libraries/oscP5/ and https://processing.org/reference/libraries/serial/index.html
+[oscP5](https://sojamo.de/libraries/oscP5/) · [Processing Serial](https://processing.org/reference/libraries/serial/index.html)
 
 ## openFrameworks
 
-Copy openFrameworks/CoordinateReceiver to apps/myApps. Use Project Generator to import/update it and enable ofxOsc (listed in addons.make). Build for your own OS, run, then use the same OSC settings as Processing. The dot disappears after 0.8 seconds without messages.
-复制到 openFrameworks 的 apps/myApps，通过 Project Generator 导入并选择 ofxOsc，再为当前系统编译。运行后用 OSC 接收坐标。文件包提供源码工程，不含已编译应用。
-Official docs https://openframeworks.cc/documentation/ofxOsc/ofxOscReceiver/
+Copy `openFrameworks/CoordinateReceiver` into your SDK’s `apps/myApps`. Import/update it in Project Generator with `ofxOsc`, then compile for your OS. The package contains source, not a compiled application. UDP 9000 and the named hand paths match Processing; the dot expires after 0.8 seconds.
+复制工程至 SDK 的 apps/myApps，用 Project Generator 导入并启用 ofxOsc，再编译。下载的是源码，不是可直接运行的应用。
+
+[ofxOsc receiver](https://openframeworks.cc/documentation/ofxOsc/ofxOscReceiver/)
 
 ## Max / MSP
 
-Open Max/CoordinateOSC.maxpat. It uses built-in udpreceive, route and unpack. No extra OSC external is required for this patch. Send to UDP 9000 and /platform/hand, point 8. X/Y/Z appear in number boxes. In XY mode ignore the Z box. Values hold when tracking stops; add a local timeout for installations.
-打开 Max 工程，检查 udpreceive 9000 → route /platform/hand/8 → unpack f f f。XY 时只读前两个数框。该最小工程在停止后保留最后值，实际装置应自行加入超时判断。
+Open `Max/CoordinateOSC.maxpat`: built-in `udpreceive 9000 → route /platform/hand/index_tip/x /platform/hand/index_tip/y /platform/hand/index_tip/z → number boxes`. No extra OSC external is required. Only selected axes update; the Z box is unused in XY mode. The patch holds its last values on loss.
+打开 Max 坐标工程即可接命名轴，只更新勾选的轴。无需额外 OSC 外部对象，XY 时忽略 Z 数框。停止后数框保留最后值。
 
-Max/CoordinateSerial.maxpat uses serial and coordinate_serial.js. Click print to list ports, edit serial a 115200 to the receiving port, then enable polling. The four outputs are x, y, z, point ID. Keep the JS file beside the patch.
-Serial 工程的四路输出为 x、y、z、点编号。先选接收端口，再打开轮询开关，JS 文件需与工程放在同一文件夹。
-Official docs https://docs.cycling74.com/reference/udpreceive/ and https://docs.cycling74.com/reference/serial/
+`Max/CoordinateSerial.maxpat` uses `serial` and `coordinate_serial.js`. Click `print` to list ports, edit `serial a 115200` to the receiving port, then enable polling. Four outputs are X, Y, Z, point ID. Keep the JS file beside the patch. This also requires a separate receiving end, not the same USB port already open in Platform.
+Serial 工程点 print 列端口，修改接收端口再开轮询。四路为 X、Y、Z、点编号，JS 与工程同目录。不能与 Platform 同时打开同一个 USB 串口。
 
-## p5.js
+[Max udpreceive](https://docs.cycling74.com/reference/udpreceive/) · [Max serial](https://docs.cycling74.com/reference/serial/)
 
-Serve the p5js folder over localhost (for example python3 -m http.server 8000), then open http://localhost:8000. The page loads p5.js and MQTT.js from a CDN, so the first load needs internet. Alternatively copy sketch.js into the p5 Web Editor and add the MQTT.js script from index.html to its HTML.
-用本地静态服务器打开 p5js 文件夹，或复制到 p5 Web Editor，并在 index.html 加入 MQTT.js。首次加载库需联网。
+## p5.js (MQTT / WSS)
 
-Fill your own broker WSS URL, user, password and topic in both Platform and the receiver. Click Connect MQTT in the example, save/connect MQTT in Platform, then start output. Credentials stay in the inputs and are not embedded in the download. This example subscribes via WSS, because ordinary browser pages cannot listen on UDP. For OSC-to-p5 use a separate UDP-to-WebSocket bridge.
-发送端与接收页连接同一个 Broker、使用同一 Topic，但 Client ID 须不同。HTTPS 页面使用 WSS。浏览器 p5.js 的示例通过 MQTT 接收；OSC 需要另外的 UDP 到 WebSocket 桥接。
-Official docs https://p5js.org/ and https://github.com/mqttjs/MQTT.js
+Serve the `p5js` folder locally, for example `python3 -m http.server 8000`, then open `http://localhost:8000`. Alternatively copy sketch.js into p5 Web Editor and add the MQTT.js script from index.html. CDN libraries need internet on first load. This browser example uses **MQTT, not OSC/UDP**.
+本地服务器打开 p5js 文件夹，或复制到 p5 Web Editor 并加入 MQTT.js。首次加载 CDN 库需联网。本例走 MQTT，不直接收 OSC/UDP。
+
+Fill the same broker WSS URL and topic in Platform and the receiver; authenticate each with an account allowed to publish or subscribe. Client IDs must differ (automatic IDs are fine). Connect the example, wait for subscription confirmation, connect Platform and start output. Credentials remain in memory. Retained messages and unrelated topics do not refresh coordinates.
+两端使用同一 Broker、Topic 和各自可用的账号，Client ID 不同。接收端等待订阅确认，再让 Platform 连接并输出。密码只留内存；保留消息或无关主题不作为当前坐标。
+
+[p5.js](https://p5js.org/reference/) · [MQTT.js](https://github.com/mqttjs/MQTT.js)
 
 ## TouchDesigner
 
+This download contains callbacks and instructions, **not** a ready-made `.toe` or `.tox`.
+下载包包含回调与说明，不含现成 .toe/.tox 工程。
+
 ### OSC
-Create an OSC In CHOP. Set Network Port=9000, protocol UDP, Active on, and OSC Address Scope=/platform/hand/*. Use Platform OSC base /platform/hand and point 8. Click test send and inspect the channels received by OSC In CHOP. Use a Select CHOP to choose the channels for point 8 and a Rename CHOP to call them x/y/z. Channel suffixes can differ between TouchDesigner builds, so pick from the channels actually received. To move a TOP, map x to x-0.5 and y to 0.5-y in a Math/Expression CHOP and export to a Transform TOP.
-创建 OSC In CHOP，UDP 9000，Address Scope 设为 /platform/hand/*。测试发送后查看真实通道名，再用 Select 和 Rename CHOP 选择并命名 x/y/z。TOP 位移通常以中心为原点且 Y 向上，按 x-0.5、0.5-y 转换后再连接 Transform TOP。
+
+Create OSC In CHOP, enable Active, UDP, Network Port 9000. Initially leave OSC Address Scope at `*`. Test send using base `/platform/hand` and name `index_tip`; inspect the channel names actually received before filtering with Select CHOP. Slashes may be converted to underscores or removed by prefix-stripping settings. Do not assume that a literal `/platform/hand/*` filter will match every build’s resulting channel names. Z exists only when selected. Use Rename CHOP as needed. For a centred TOP with Y upward, map X to `x-0.5` and Y to `0.5-y` before exporting to Transform TOP. OSC In CHOP can hold old values when packets stop; add an arrival/timeout check for your installation.
+先保持范围 *，测试后从实际通道列表选择。通道名可能将斜杠转成下划线，也受前缀去除设置影响。未选 Z 就没有 Z。TOP 位移可用 x-0.5、0.5-y 转换。停止后 CHOP 可能保留旧值，装置需检查消息新鲜度。
 
 ### MQTT
-TouchDesigner has an MQTT Client DAT. Configure the broker TCP/TLS host and port using your broker's instructions, and credentials. This is normally a different endpoint from the WSS URL used by Platform. Create a Table DAT named coordinates beside the receiver. Paste coordinate_callbacks.py into its callbacks DAT. onConnect subscribes to platform/coordinates; onMessage fills the table. Use DAT to CHOP or expressions to read the point rows. The final column is the local received time. Add a local timeout before applying values to moving equipment.
-TouchDesigner 支持 MQTT Client DAT。使用 Broker 的 TCP/TLS 端口，网页使用 WSS 端口，两者需分别填写。建立同级 coordinates Table DAT，粘贴附带回调脚本，连接后自动订阅并填表。最后一列记录接收时间，便于做超时处理。
+
+MQTT Client DAT Network Address accepts a URI such as `ssl://YOUR_HOST:8883` or a broker-supported `wss://YOUR_HOST:8084/mqtt`, depending on TouchDesigner build and broker support. Use the actual endpoint and leave certificate verification enabled. It is not restricted to TCP/TLS. Create a sibling Table DAT named `coordinates`; paste `coordinate_callbacks.py` into the receiver’s callbacks DAT. Set `TOPIC` to match Platform. `onConnect` subscribes; `onMessage` accepts current messages on that topic and fills the table. Named JSON produces `channel, value, received_seconds` columns; legacy JSON produces point rows. Use DAT to CHOP or expressions. Compare the final timestamp with Python `time.monotonic()` for expiry, not the timeline or JSON t.
+MQTT Client DAT 支持软件与 Broker 可用的 tcp/ssl/ws/wss 地址，不必强制换成 TCP。填写真实地址、账号，保留证书校验；建立同级 coordinates Table DAT 并设置回调，脚本 TOPIC 与网页一致。最后一列是 Python 单调接收时间，超时用同一时钟比较。
 
 ### Serial
-Create a Serial DAT, choose the receiving port and 115200 baud. Set one row per line with LF termination. Create the same coordinates Table DAT and use coordinate_callbacks.py as the Serial DAT callbacks. Its onReceive parses each JSON line. Match the callback signature to the template included with your TouchDesigner build if it differs.
-建立 Serial DAT，设为按行接收、LF、115200。指定附带回调脚本并建立 coordinates 表。不同版本若回调签名变化，以软件自动生成的模板为准。
-Official docs https://docs.derivative.ca/OSC_In_CHOP and https://docs.derivative.ca/MQTT_Client_DAT and https://docs.derivative.ca/Serial_DAT
 
-## Serial connection topology / 串口链路
+Create Serial DAT on the receiving port at 115200, set one message per LF-terminated line, add the same coordinates table and callbacks. `onReceive(dat, rowIndex, message, bytes)` parses each complete JSON line. If your version generates a different callback signature, keep its template and call `write_frame(dat, message)` from it. The serial link still needs two ends.
+按完整 LF 行接收，指定回调与 coordinates 表。若版本的回调签名不同，保留其自动模板，在其中调用 write_frame(dat, message)。串口链路仍须双端连通。
 
-A serial port is normally exclusive. Platform and the receiving desktop software cannot both open the same USB port. To connect two applications on one computer, use an OS-provided/configured virtual serial pair, with one end in each application, or an external device that forwards bytes between two ports. Web Serial may not expose every virtual port, depending on OS and driver. OSC is the direct same-computer route for the included desktop examples.
-同一个 USB 串口通常只能由一个程序占用。两个软件需要虚拟串口对（各用一端）或设备转发；Web Serial 是否能列出虚拟端口取决于系统与驱动。先确认真实链路再选 Serial。
+[OSC In CHOP](https://docs.derivative.ca/OSC_In_CHOP) · [MQTT Client DAT](https://docs.derivative.ca/MQTT_Client_DAT) · [MQTT callbacks](https://docs.derivative.ca/MqttclientDAT_Class) · [Serial DAT](https://docs.derivative.ca/Serial_DAT)
 
-## Verification status / 验证状态
+## Serial topology / 串口链路
 
-Platform coordinate math, rate limiting, missing-target handling and OSC UDP packet bytes are checked with synthetic points and local receivers. The patches and source projects are provided for receiver-side testing. No real-device installation/compile test in Processing, openFrameworks, Max or TouchDesigner has been claimed. Test credentials, screenshots of real tracking and actual software captures must be collected in your own test session.
-已用合成坐标与本机 UDP 接收端验证 Platform 消息格式、限速和丢失处理。五种软件的工程供用户接收端验收；尚未宣称在这些软件中完成实机编译运行。请记录软件版本、输入模式、消息内容与实际结果。
+A USB serial port is normally exclusive. Platform and the receiver cannot both open it. Use a configured virtual serial pair (one end per application) or a device forwarding between two ports. Web Serial may not expose every virtual port on every OS/driver. For a direct same-computer desktop connection, start with OSC. Arduino numeric and LED sketches do not forward coordinate JSON.
+同一 USB 口通常只能被一个程序占用。虚拟串口对各用一端，或设备在两个端口间转发；浏览器是否能列出虚拟口依系统驱动。桌面软件同机优先试 OSC，Arduino 点灯/数值示例不转发坐标 JSON。
+
+## Verification / 验证范围
+
+Coordinate math and OSC bytes are tested with synthetic points and local UDP receivers. JS parsers, MQTT subscription-state handling and TouchDesigner callbacks have automated tests using controlled inputs; this is not a running Processing, openFrameworks, Max or TouchDesigner installation. Source packages are checked against their source files. Camera model loading was checked with a synthetic image, not a human accuracy study. Real camera quality, external receiver compilation, real broker permissions and physical Serial links remain to be verified in your setup.
+已检查坐标算法、本机 UDP 数据、受控输入下的 JS/Python 回调与下载包一致性。软件工程未冒充在 Processing、openFrameworks、Max、TouchDesigner 中完成实机运行；真人效果、实际 Broker 权限与物理串口仍待验证。

@@ -21,5 +21,13 @@ test('coordinate OSC sends float vectors, rejects invalid batches and preserves 
   assert.equal((await post('/osc/coordinates',{points:[{id:8,values:[.2,'oops']}]})).status,400);
   assert.equal((await post('/osc',{value:.75})).status,204);
   await new Promise(r=>setTimeout(r,20));assert.equal(messages.length,3);
+  assert.equal((await post('/osc/coordinates',{points:[{id:8,name:'index_tip',axes:['x','z'],values:[.25,-.5]}]})).status,204);
+  await new Promise(r=>setTimeout(r,20));assert.equal(messages.length,5);
+  assert.ok(messages[3].includes(Buffer.from('/platform/hand/index_tip/x\0')));
+  assert.ok(messages[4].includes(Buffer.from('/platform/hand/index_tip/z\0')));
+  assert.equal(messages[3].readFloatBE(messages[3].length-4),.25);
+  assert.equal(messages[4].readFloatBE(messages[4].length-4),-.5);
+  assert.equal((await post('/osc/coordinates',{points:[{id:8,name:'../bad',axes:['x'],values:[.2]}]})).status,400);
+
  } finally {server.closeAllConnections();await new Promise(r=>server.close(r));receiver.close();udp.close();}
 });

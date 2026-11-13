@@ -42,3 +42,24 @@ test('coordinate projects round-trip all three modes with validated point select
   assert.equal(clean.learning,'coordinates');
  }
 });
+test('named axes are explicit, selective, validated and remain within transport limits',()=>{
+ const config={...defaultCoordinates('hand'),points:[8,0,4,12],axes:'xyz' as const,enabledAxes:['x','z'] as ('x'|'z')[],names:{'8':'index_tip','0':'wrist','4':'thumb','12':'middle'}};
+ const sampler=new CoordinateSampler('hand',config);
+ const points=Array.from({length:21},()=>({x:.2,y:.4,z:-.3}));
+ const frame=sampler.step(points,100).frame!;
+ const message=JSON.parse(coordinateText(frame,config));
+ assert.equal(message.values.index_tip_x,.8);
+ assert.equal(message.values.index_tip_z,-.3);
+ assert.equal(message.values.index_tip_y,undefined);
+ assert.deepEqual(coordinateOsc(frame,config)[0],{id:8,name:'index_tip',axes:['x','z'],values:[.8,-.3]});
+ assert.ok(coordinateText(frame,config).length<=512);
+ assert.throws(()=>cleanCoordinateConfig('hand',{...config,names:{8:'same',0:'same'}}));
+ assert.throws(()=>cleanCoordinateConfig('hand',{...config,names:{8:'bad/path'}}));
+ assert.throws(()=>cleanCoordinateConfig('hand',{...config,enabledAxes:[]}));
+});
+test('old coordinate config keeps its numbered, point-vector message format',()=>{
+ const config={points:[8],axes:'xy' as const,hz:10,smoothing:0};
+ const frame=new CoordinateSampler('hand',config).step(Array.from({length:21},()=>({x:.2,y:.3})),10).frame!;
+ assert.deepEqual(coordinateOsc(frame,config),[{id:8,values:[.8,.3]}]);
+ assert.ok(JSON.parse(coordinateText(frame,config)).points);
+});

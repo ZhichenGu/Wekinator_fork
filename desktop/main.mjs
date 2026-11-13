@@ -26,9 +26,9 @@ async function startServer() {
     res.setHeader('Content-Security-Policy', "frame-ancestors 'none'; frame-src 'none'; object-src 'none'; base-uri 'self'");
     return next();
   }, async (req, res) => {
-    if (!['/api/desktop/osc', '/api/desktop/osc/int32', '/api/desktop/osc/coordinates'].includes(req.url)) return false;
+    if (!['/api/desktop/osc', '/api/desktop/osc/int32', '/api/desktop/osc/coordinates', '/api/desktop/osc/axes'].includes(req.url)) return false;
     if (req.headers.origin !== origin) res.writeHead(403).end();
-    else await osc.handle(req, res, req.url.endsWith('/int32'),req.url.endsWith('/coordinates'));
+    else await osc.handle(req, res, req.url.endsWith('/int32'),req.url.endsWith('/coordinates')||req.url.endsWith('/axes'));
     return true;
   });
   const listening = once(localServer, 'listening');

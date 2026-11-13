@@ -29,6 +29,16 @@ void draw() {
   }
 }
 void oscEvent(OscMessage message) {
+  if (message.checkTypetag("f")) {
+    String path = message.addrPattern();
+    float value = message.get(0).floatValue();
+    if (Float.isNaN(value) || Float.isInfinite(value)) return;
+    if (path.equals("/platform/hand/index_tip/x")) x = value;
+    else if (path.equals("/platform/hand/index_tip/y")) y = value;
+    else if (path.equals("/platform/hand/index_tip/z")) z = value;
+    else return;
+    received = millis(); return;
+  }
   if (message.checkAddrPattern("/platform/hand/8") &&
       (message.checkTypetag("ff") || message.checkTypetag("fff"))) {
     x = message.get(0).floatValue(); y = message.get(1).floatValue();
@@ -42,6 +52,20 @@ void serialEvent(Serial port) {
   try {
     JSONObject frame = parseJSONObject(line.trim());
     if (!frame.getString("mode").equals("hand")) return;
+    if (frame.hasKey("values")) {
+      JSONObject values = frame.getJSONObject("values");
+      boolean matched = false;
+      String[] keys = {"index_tip_x", "index_tip_y", "index_tip_z"};
+      float[] next = {x, y, z};
+      for (int i=0; i<keys.length; i++) if (values.hasKey(keys[i])) {
+        next[i] = values.getFloat(keys[i]);
+        if (Float.isNaN(next[i]) || Float.isInfinite(next[i])) return;
+        matched = true;
+      }
+      if (!matched) return;
+      x = next[0]; y = next[1]; z = next[2];
+      received = millis(); return;
+    }
     JSONArray points = frame.getJSONArray("points");
     for (int i=0; i<points.size(); i++) {
       JSONObject p = points.getJSONObject(i);

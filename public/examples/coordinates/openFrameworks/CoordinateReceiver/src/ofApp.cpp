@@ -1,13 +1,24 @@
 #include "ofApp.h"
+#include <cmath>
 void ofApp::setup(){receiver.setup(9000);ofSetFrameRate(60);}
 void ofApp::update(){
     while(receiver.hasWaitingMessages()){
         ofxOscMessage message;receiver.getNextMessage(message);
-        if(message.getAddress()!="/platform/hand/8")continue;
+        const auto address=message.getAddress();
+        if(message.getNumArgs()==1 && message.getArgType(0)==OFXOSC_TYPE_FLOAT){
+            const auto value=message.getArgAsFloat(0);
+            if(!std::isfinite(value))continue;
+            if(address=="/platform/hand/index_tip/x")x=value;
+            else if(address=="/platform/hand/index_tip/y")y=value;
+            else if(address=="/platform/hand/index_tip/z")z=value;
+            else continue;
+            received=ofGetElapsedTimef();continue;
+        }
+        if(address!="/platform/hand/8")continue;
         int count=message.getNumArgs();
         if(count!=2 && count!=3)continue;
         bool valid=true;
-        for(int i=0;i<count;i++)valid=valid && message.getArgType(i)==OFXOSC_TYPE_FLOAT;
+        for(int i=0;i<count;i++)valid=valid && message.getArgType(i)==OFXOSC_TYPE_FLOAT && std::isfinite(message.getArgAsFloat(i));
         if(!valid)continue;
         x=message.getArgAsFloat(0);y=message.getArgAsFloat(1);
         z=count==3?message.getArgAsFloat(2):0;

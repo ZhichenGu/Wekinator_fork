@@ -1,8 +1,10 @@
+import {CameraPlaceholder} from './CameraPlaceholder';
+import {CoordinateOutputDialog} from './CoordinateOutputDialog';
 import React,{useEffect,useRef,useState} from 'react';
-import {ArrowLeft,Camera,Download,Play,Square,X,Pencil} from 'lucide-react';
+import {ArrowLeft,Download,Play,Square,X,Pencil} from 'lucide-react';
 import {t,messageT} from './i18n';
 import {type Project,type Point,validateProject} from './core';
-import {CoordinateSampler,defaultCoordinates,coordinateText,coordinateOsc,type CoordinateFrame} from './coordinates';
+import {CoordinateSampler,defaultCoordinates,coordinateText,coordinateOsc,coordinateAxes,coordinateName,type CoordinateConfig,type CoordinateFrame} from './coordinates';
 import {saveProject} from './storage';
 import {useLandmarkCamera} from './useLandmarkCamera';
 import {PointPicker} from './PointPicker';
@@ -19,9 +21,10 @@ import {RenameProjectDialog} from './ProjectLibrary';
 
 export function CoordinateStudio({initial,onBack}:{initial:Project;onBack:()=>void}) {
   const [project,setProject]=useState(initial);
-  const config=project.coordinates??defaultCoordinates(project.mode);
+  const config=project.coordinates??{...defaultCoordinates(project.mode),named:false};
   const action=project.actions[0];
   const serial=useSerialOutput(),mqtt=useMqttOutput();
+  const [outputDialog,setOutputDialog]=useState(false);
   const [dirty,setDirty]=useState(false),[running,setRunning]=useState(false),[points,setPoints]=useState<Point[]>([]);
   const [values,setValues]=useState<CoordinateFrame|null>(null),[notice,setNotice]=useState(''),[output,setOutput]=useState('未运行');
   const [saveError,setSaveError]=useState(''),[saved,setSaved]=useState(false),[renaming,setRenaming]=useState(false);
@@ -46,14 +49,15 @@ export function CoordinateStudio({initial,onBack}:{initial:Project;onBack:()=>vo
   useEffect(()=>{sampler.current=new CoordinateSampler(project.mode,config);},[project.coordinates]);
   useEffect(()=>{alive.current=true;return ()=>{alive.current=false;epoch.current++;};},[]);
   useEffect(()=>{if(camera.state!=='on')stop();},[camera.state]);
-  async function send(frame:CoordinateFrame) {
+  async function send(frame:CoordinateFrame,override?:CoordinateConfig) {
     if(inFlight.current)return;
     const generation=epoch.current,c=latest.current;
+    const outputConfig=override??c.project.coordinates??{...defaultCoordinates(c.project.mode),named:false};
     inFlight.current=true;
     try {
-      if(c.action.effect==='osc')await sendOsc(coordinateOsc(frame),c.action.osc??{host:'127.0.0.1',port:9000,address:'/platform/'+c.project.mode});
-      if(c.action.effect==='serial')await c.serial.send({text:coordinateText(frame),lineEnding:'lf'});
-      if(c.action.effect==='mqtt')await c.mqtt.send({...c.action.mqtt??DEFAULT_MQTT_MESSAGE,payload:coordinateText(frame)});
+      if(c.action.effect==='osc')await sendOsc(coordinateOsc(frame,outputConfig),c.action.osc??{host:'127.0.0.1',port:9000,address:'/platform/'+c.project.mode});
+      if(c.action.effect==='serial')await c.serial.send({text:coordinateText(frame,outputConfig),lineEnding:'lf'});
+      if(c.action.effect==='mqtt')await c.mqtt.send({...c.action.mqtt??DEFAULT_MQTT_MESSAGE,payload:coordinateText(frame,outputConfig)});
       if(generation===epoch.current)setOutput(c.action.effect==='indicator'?'仅预览':'已提交输出');
     } catch(e) {
       if(generation===epoch.current){stop();setOutput('发送失败');setNotice((e as Error).message);}
@@ -71,7 +75,7 @@ export function CoordinateStudio({initial,onBack}:{initial:Project;onBack:()=>vo
   function select(id:number){
     if(config.points.includes(id)){
       if(config.points.length===1)return;
-      edit({coordinates:{...config,points:config.points.filter(n=>n!==id)}});
+      edit({coordinates:{...config,points:config.points.filter(n=>n!==id),names:config.names?Object.fromEntries(Object.entries(config.names).filter(([key])=>Number(key)!==id)):undefined}});
     } else if(config.points.length<4)edit({coordinates:{...config,points:[...config.points,id]}});
     else setNotice('最多同时输出四个点，请先移除一个点。');
   }
@@ -82,7 +86,7 @@ export function CoordinateStudio({initial,onBack}:{initial:Project;onBack:()=>vo
   const osc=action.osc??{host:'127.0.0.1',port:9000,address:'/platform/'+project.mode};
   const status=output==='发送失败'?'error':
     action.effect==='mqtt'&&(dirty||mqtt.state!=='connected')||action.effect==='serial'&&serial.status!=='connected'?'pending':'ready';
-  const sample=values??{mode:project.mode,t:0,points:config.points.map(id=>({id,x:.5,y:.5,...(config.axes==='xyz'?{z:0}:{})}))};
+  const testOutput=(draft:CoordinateConfig)=>void send({mode:project.mode,t:0,points:draft.points.map(id=>({id,x:.5,y:.5,...(coordinateAxes(draft).includes('z')?{z:0}:{})}))},draft);
   return <main className="object-studio coordinate-workspace">
     <div className="object-toolbar">
       <button className="toolbar-back" aria-label={t('工作空间')} onClick={async()=>{stop();await queue.current;onBack();}}><ArrowLeft size={19}/></button>
@@ -91,7 +95,7 @@ export function CoordinateStudio({initial,onBack}:{initial:Project;onBack:()=>vo
       <div className="object-tools">{saved||saveError?<ProjectSaveStatus error={saveError}/>:<span className="save-state" role="status">{t('保存中…')}</span>}
       <button className="secondary small" onClick={download}><Download size={15}/>{t('导出项目')}</button></div>
     </div>
-    {(notice||camera.error)&&<p className="object-notice" role="alert">{messageT(notice||camera.error)}<button className="icon-button" aria-label={t('关闭提示')} onClick={()=>setNotice('')}><X size={14}/></button></p>}
+    {(notice||camera.error)&&<p className="object-notice" role="alert">{messageT(notice||camera.error)}<button className="icon-button" aria-label={t('关闭提示')} onClick={()=>{setNotice('');camera.clearError();}}><X size={14}/></button></p>}
     <div className="object-grid coordinate-grid">
       <aside className="object-config"><h2>{t('输出检测点')}</h2>
         <p className="object-help">{t('点击画面选点，最多四个。也可从下方选择。')}</p>
@@ -99,36 +103,43 @@ export function CoordinateStudio({initial,onBack}:{initial:Project;onBack:()=>vo
         <label className="field">{t('添加检测点')}<select aria-label={t('添加检测点')} value="" disabled={config.points.length>=4} onChange={e=>select(Number(e.target.value))}><option value="">{t('选择检测点')}</option>{landmarkIds(project.mode).filter(id=>!config.points.includes(id)).map(id=><option key={id} value={id}>{landmarkLabel(project.mode,id)}</option>)}</select></label>
         <p className="object-help">{t('XY 与镜像画面一致，左上为 0、0，右下为 1、1。Z 为相对深度。')}</p>
       </aside>
-      <section className="object-camera"><div className="object-camera-title"><h2>{t('实时画面')}</h2><span>{t(camera.state==='on'?'追踪中':camera.state==='opening'?'正在开启摄像头':'摄像头未开启')}</span></div>
-        <div className="coordinate-stage" style={{aspectRatio:camera.size.width/camera.size.height}}>
+      <section className="object-camera"><div className="object-camera-title"><h2>{t('实时画面')}</h2><span>{t(camera.state==='on'?'追踪中':camera.state==='opening'?'正在加载模型':'摄像头未开启')}{camera.fallback&&t('· 兼容模式')}</span></div>
+        <div className="coordinate-stage" style={{aspectRatio:camera.size.width/camera.size.height,'--coordinate-ratio':camera.size.width/camera.size.height} as React.CSSProperties}>
           <video ref={camera.video} autoPlay muted playsInline/>
           {camera.state==='on'&&<><Skeleton points={points} mode={project.mode} focus={config.points}/><PointPicker points={points} mode={project.mode} selected={config.points} onSelect={select} pair={false}/></>}
-          {camera.state!=='on'&&<div className="coordinate-empty"><Camera size={32}/><p>{t(camera.state==='opening'?'正在开启摄像头':'摄像头未开启')}</p></div>}
+          {camera.state!=='on'&&<CameraPlaceholder loading={camera.state==='opening'} hint={project.mode==='hand'?'将一只手完整放入画面，保持手指清晰可见。':project.mode==='face'?'正对摄像头，保持面部完整可见，避免过暗的环境。':'后退一些，让肩、髋、手腕和脚踝都进入画面。'} onStart={()=>void camera.start()}/>}
         </div>
-        <div className="object-buttons"><button className="secondary" disabled={camera.state==='opening'} onClick={()=>camera.state==='on'?camera.stop():void camera.start()}>{t(camera.state==='on'?'关闭摄像头':'开启摄像头')}</button>
+        <div className="object-buttons">{camera.state==='on'&&<button className="secondary" onClick={camera.stop}>{t('关闭摄像头')}</button>}
           <button className="primary" disabled={camera.state!=='on'} onClick={running?stop:start}>{running?<Square size={15}/>:<Play size={15}/>} {t(running?'停止输出':'开始输出')}</button></div>
       </section>
       <aside className="object-output"><h2>{t('实时坐标')}</h2><strong role="status">{t(camera.state==='on'?(values?'追踪中':'追踪丢失，暂停坐标输出'):'等待目标')}</strong>
-        {config.points.map(id=>{const point=values?.points.find(p=>p.id===id);return <div className="coordinate-readout" key={id}><strong>{landmarkLabel(project.mode,id)}</strong><dl>{(config.axes==='xy'?['x','y']:['x','y','z']).map(axis=><div key={axis}><dt>{axis.toUpperCase()}</dt><dd>{point?(point[axis as 'x'|'y'|'z']??0).toFixed(3):'—'}</dd></div>)}</dl></div>;})}
+        {config.points.map(id=>{const point=values?.points.find(p=>p.id===id);return <div className="coordinate-readout" key={id}><strong>{config.named?coordinateName(project.mode,id,config):landmarkLabel(project.mode,id)}</strong><dl>{coordinateAxes(config).map(axis=><div key={axis}><dt>{axis.toUpperCase()}</dt><dd>{point?(point[axis as 'x'|'y'|'z']??0).toFixed(3):'—'}</dd></div>)}</dl></div>;})}
         <p>{t('输出状态')} · {t(running&&!values?'等待目标':output)}</p><p className="object-help">{t('单目标追踪；丢失后暂停，重新追踪到后继续。停止后不补发。')}</p>
       </aside>
     </div>
     <WorkspaceSettings status={status} sections={[
       {label:'坐标设置',content:<>
-        <label className="field">{t('坐标维度')}<select value={config.axes} onChange={e=>edit({coordinates:{...config,axes:e.target.value as 'xy'|'xyz'}})}><option value="xy">XY</option><option value="xyz">XYZ</option></select></label>
         <label className="field">{t('发送频率')}<select value={config.hz} onChange={e=>edit({coordinates:{...config,hz:Number(e.target.value)}})}>{[5,10,15,20,30].map(n=><option value={n} key={n}>{n} Hz</option>)}</select></label>
         <label className="field">{t('坐标平滑')}<select value={config.smoothing} onChange={e=>edit({coordinates:{...config,smoothing:Number(e.target.value)}})}><option value="0">{t('关闭')}</option><option value="0.35">{t('轻度')}</option><option value="0.7">{t('较强')}</option></select></label>
         <p>{t('频率为发送上限，实际受检测速度与连接速度限制。修改设置会停止输出。')}</p><p>{t('Z 使用检测器的相对深度，不代表摄像头距离或厘米。')}</p>
       </>},
       {label:'输出方式',content:<>
-        <div className="output-choices" role="group" aria-label={t('输出方式')}>{(['indicator','serial','osc','mqtt'] as const).map(value=><button key={value} className={action.effect===value?'selected':''} aria-pressed={action.effect===value} disabled={running} onClick={()=>{void serial.disconnect();mqtt.reset();editAction({effect:value});}}>{value==='indicator'?t('仅预览'):value==='serial'?'Serial':value.toUpperCase()}</button>)}</div>
-        {action.effect==='serial'&&<SerialPanel coordinates output={serial} message={{text:'coordinates',lineEnding:'lf'}} baudRate={project.serialBaudRate??115200} disabled={running} onMessage={()=>{}} onBaudRate={serialBaudRate=>edit({serialBaudRate})} onTest={()=>void send(sample)}/>}
-        {action.effect==='mqtt'&&<MqttPanel coordinates output={mqtt} config={project.mqtt} value={action.mqtt??{topic:'platform/coordinates',payload:'coordinates',qos:0}} actionId={action.id} disabled={running} onDirtyChange={setDirty} onSave={(broker,message)=>edit({mqtt:broker,actions:[{...action,mqtt:message}]})} onTest={()=>void send(sample)}/>}
-        {action.effect==='osc'&&<OscPanel coordinates continuous target={osc} onSave={osc=>editAction({osc})} disabled={running} onTest={()=>void send(sample)}/>}
-        <p className="object-help">{t('测试发送使用当前有效坐标；没有目标时发送 0.5、0.5 的测试值。')}</p>
+        <div className="output-choices" role="group" aria-label={t('输出方式')}>{(['indicator','serial','osc','mqtt'] as const).map(value=><button key={value} className={action.effect===value?'selected':''} aria-pressed={action.effect===value} disabled={running} onClick={()=>{
+          if(value!==action.effect){void serial.disconnect();mqtt.reset();editAction({effect:value});}
+          if(value!=='indicator')setOutputDialog(true);
+        }}>{value==='indicator'?t('仅预览'):value==='serial'?'Serial':value.toUpperCase()}</button>)}</div>
+        <p className="object-help">{t('选择输出方式，在窗口中命名检测点并勾选坐标轴。')}</p>
+        {action.effect!=='indicator'&&<p>{config.points.map(id=>coordinateName(project.mode,id,config)).join(' · ')} · {coordinateAxes(config).join(' / ').toUpperCase()}</p>}
         <a href={import.meta.env.BASE_URL+'examples/coordinate_receivers.zip'} download>{t('下载坐标接收案例（五种软件）')}</a>
       </>}
+
     ]}/>
+    {outputDialog&&<CoordinateOutputDialog mode={project.mode} protocol={action.effect==='serial'?'Serial':action.effect.toUpperCase()} config={config} prefix={osc.address} onClose={()=>setOutputDialog(false)} onApply={coordinates=>edit({coordinates})} connection={draft=><>
+      {action.effect==='serial'&&<SerialPanel coordinates output={serial} message={{text:'coordinates',lineEnding:'lf'}} baudRate={project.serialBaudRate??115200} disabled={running} onMessage={()=>{}} onBaudRate={serialBaudRate=>edit({serialBaudRate})} onTest={()=>testOutput(draft)}/>}
+      {action.effect==='mqtt'&&<MqttPanel coordinates output={mqtt} config={project.mqtt} value={action.mqtt??{topic:'platform/coordinates',payload:'coordinates',qos:0}} actionId={action.id} disabled={running} onDirtyChange={setDirty} onSave={(broker,message)=>edit({mqtt:broker,actions:[{...action,mqtt:message}]})} onTest={()=>testOutput(draft)}/>}
+      {action.effect==='osc'&&<OscPanel coordinates continuous target={osc} onSave={osc=>editAction({osc})} disabled={running} onTest={()=>testOutput(draft)}/>}
+      <p className="object-help">{t('测试发送使用 X=0.5、Y=0.5、Z=0。应用后按实际坐标输出。')}</p>
+    </>}/>}
     {renaming&&<RenameProjectDialog name={project.name} onClose={()=>setRenaming(false)} onSave={async name=>edit({name})}/>}
   </main>;
 }

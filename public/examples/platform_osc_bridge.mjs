@@ -60,8 +60,12 @@ export function createOscReceiver() {
         if(!Array.isArray(points)||points.length<1||points.length>4||new Set(points.map(p=>p.id)).size!==points.length)throw Error('Invalid coordinate batch');
         messages=points.map(p=>{
           if(!Number.isInteger(p.id)||p.id<0||p.id>477||!Array.isArray(p.values))throw Error('Invalid point');
+          if(p.name!==undefined||p.axes!==undefined){
+            if(typeof p.name!=='string'||!/^[A-Za-z][A-Za-z0-9_]{0,15}$/.test(p.name)||!Array.isArray(p.axes)||!p.axes.length||p.axes.length>3||new Set(p.axes).size!==p.axes.length||p.axes.some(a=>!['x','y','z'].includes(a))||p.values.length!==p.axes.length||p.values.some(v=>typeof v!=='number'||!Number.isFinite(Math.fround(v))))throw Error('Invalid named axes');
+            return p.axes.map((axis,i)=>packet(address+'/'+p.name+'/'+axis,p.values[i],false));
+          }
           return packet(address+'/'+p.id,p.values,false);
-        });
+        }).flat();
       } else messages=[packet(address,value,integer)];
       await Promise.all(messages.map(message=>new Promise((resolve,reject)=>udp.send(message,port,target,e=>e?reject(e):resolve()))));
       res.writeHead(204).end();
@@ -81,7 +85,7 @@ if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) 
     }
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
-    if (req.url !== '/osc' && req.url !== '/osc/int32' && req.url !== '/osc/coordinates') { res.writeHead(404).end(); return; }
+    if (req.url !== '/osc' && req.url !== '/osc/int32' && req.url !== '/osc/coordinates' && req.url !== '/osc/axes') { res.writeHead(404).end(); return; }
     if (req.method === 'OPTIONS') {
       res.writeHead(204, {
         'Access-Control-Allow-Methods': 'POST',
@@ -91,7 +95,7 @@ if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) 
       }).end();
       return;
     }
-    void receiver.handle(req, res, req.url === '/osc/int32',req.url === '/osc/coordinates');
+    void receiver.handle(req, res, req.url === '/osc/int32',req.url === '/osc/coordinates'||req.url === '/osc/axes');
   });
   server.on('error', error => { console.error(error.message); process.exitCode = 1; });
   server.listen(8765, host, () => console.log('Platform OSC ready on http://127.0.0.1:8765 (Ctrl+C to stop)'));

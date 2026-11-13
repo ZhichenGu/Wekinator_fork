@@ -18,7 +18,7 @@
         "box": {
           "id": "note",
           "maxclass": "comment",
-          "text": "OSC coordinates: UDP 9000, base /platform/hand, point 8",
+          "text": "Named axes: UDP 9000, /platform/hand/index_tip/x (and y, z)",
           "patching_rect": [
             25,
             20,
@@ -44,24 +44,11 @@
         "box": {
           "id": "route",
           "maxclass": "newobj",
-          "text": "route /platform/hand/8",
+          "text": "route /platform/hand/index_tip/x /platform/hand/index_tip/y /platform/hand/index_tip/z",
           "patching_rect": [
             25,
             110,
-            280,
-            24
-          ]
-        }
-      },
-      {
-        "box": {
-          "id": "unpack",
-          "maxclass": "newobj",
-          "text": "unpack f f f",
-          "patching_rect": [
-            25,
-            155,
-            280,
+            710,
             24
           ]
         }
@@ -200,18 +187,6 @@
             0
           ],
           "destination": [
-            "unpack",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "source": [
-            "unpack",
-            0
-          ],
-          "destination": [
             "num0",
             0
           ]
@@ -220,7 +195,7 @@
       {
         "patchline": {
           "source": [
-            "unpack",
+            "route",
             1
           ],
           "destination": [
@@ -232,7 +207,7 @@
       {
         "patchline": {
           "source": [
-            "unpack",
+            "route",
             2
           ],
           "destination": [

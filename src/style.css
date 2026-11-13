@@ -526,10 +526,9 @@ html:has(.studio) {overflow-anchor:none}
 .match-feedback .checkbox-label {align-items:baseline}
 
 .coordinate-stage{position:relative;width:100%;background:#eff4f8;border:1px solid #d8e2ec;border-radius:9px;overflow:hidden}
-.coordinate-stage video{display:block;width:100%;height:100%;object-fit:contain;transform:scaleX(-1)}
+.coordinate-stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transform:scaleX(-1)}
 .coordinate-stage .skeleton{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1)}
 .coordinate-stage .point-picker{position:absolute;inset:0;width:100%;height:100%}
-.coordinate-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#52667c;gap:12px}
 .coordinate-point{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;margin:8px 0;padding:12px;border:1px solid #b9cee3;border-radius:7px;background:#e6f0fb;color:#294c6d}
 .coordinate-readout{border-top:1px solid #dce5ee;margin-top:18px;padding-top:14px}
 .coordinate-readout dl>div{display:flex;justify-content:space-between;gap:10px;margin:8px 0;font-variant-numeric:tabular-nums}
@@ -537,3 +536,34 @@ html:has(.studio) {overflow-anchor:none}
 @media(min-width:1101px){.coordinate-grid{grid-template-columns:240px minmax(0,1fr) 260px}}
 
 .learn-coordinate-shot{display:block;width:100%;height:auto;border:1px solid #dce5ee;border-radius:8px}.learn-section figure{margin:18px 0}.learn-section figcaption{font-size:12px;color:#62758a;margin-top:8px}
+.coordinate-output-dialog{width:min(720px,calc(100vw - 40px));max-height:calc(100dvh - 48px)}
+.coordinate-output-dialog .coordinate-dialog-content{padding:20px 24px;overflow-y:auto;min-height:0}
+.coordinate-output-dialog .coordinate-axis-options{display:flex;gap:24px;border:0;padding:0;margin:0 0 10px}
+.coordinate-axis-options legend{font-weight:600;margin-bottom:12px}
+.coordinate-axis-options label{display:flex;align-items:center;gap:9px;cursor:pointer}
+.coordinate-name-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:18px 0}
+.coordinate-name-list section{padding:14px;border:1px solid #d7e2ee;background:#f5f8fc;border-radius:8px;min-width:0}
+.coordinate-name-list .field{display:block;font-size:13px}.coordinate-name-list input{margin-top:8px;width:100%;box-sizing:border-box}
+.coordinate-addresses{display:flex;flex-direction:column;gap:5px;margin-top:12px;font-size:12px;color:#476783;overflow-wrap:anywhere}
+.coordinate-connection{margin-top:20px;border-top:1px solid #dce5ee;padding-top:14px}.coordinate-connection summary{cursor:pointer;font-weight:600;margin-bottom:12px}
+.coordinate-output-dialog footer{display:flex;justify-content:flex-end}
+@media(max-width:600px){.coordinate-name-list{grid-template-columns:1fr}.coordinate-output-dialog .coordinate-dialog-content{padding:16px}}
+
+/* All camera workspaces share the same centered startup control. */
+.camera-idle.camera-placeholder {background:#f0f4f7;border-radius:inherit;gap:0;color:#526579;pointer-events:auto}
+.camera-idle .camera-symbol {flex-shrink:0;border-color:#c7d4df;color:#688198;background:#f9fbfd}
+.camera-idle.camera-placeholder h3 {margin:0;color:#263c50;font-size:16px;font-weight:600}
+.camera-idle.camera-placeholder p {color:#526579;margin:10px 0 22px}
+.camera-idle.camera-placeholder .primary {background:#d1e7fa;color:#173854;flex-shrink:0}
+.camera-idle.camera-placeholder h3+.primary {margin-top:18px}
+.coordinate-stage {width:min(100%,calc(var(--coordinate-ratio) * 63svh));margin-inline:auto}
+.visual-detection .object-preview video {position:absolute;inset:0}
+@media(max-width:720px){
+ .camera-idle.camera-placeholder {padding:12px}
+ .camera-idle .camera-symbol {width:42px;height:42px;margin-bottom:8px}
+ .camera-idle.camera-placeholder h3 {font-size:14px}
+ .camera-idle.camera-placeholder p {font-size:11px;line-height:1.5;margin:6px 0 10px}
+ .camera-idle.camera-placeholder .primary {min-height:32px;padding:7px 12px}
+}
+
+.learn-download-group{margin-top:20px}.learn-download-group h3{font-size:14px;color:#40546a;margin:0 0 10px}

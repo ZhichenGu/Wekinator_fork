@@ -1,6 +1,6 @@
 # 项目交接
 
-核对日期：2026-11-13。本地代码版本 **0.77**（package 0.77.0）。本文件是现状导航，行为细节以代码为准；不要把旧阶段文档或聊天中的未来设想当作已完成。
+核对日期：2026-11-13。预览副本代码版本 **0.79**（package 0.79.0）。本文件是现状导航，行为细节以代码为准；不要把旧阶段文档或聊天中的未来设想当作已完成。
 
 ## 先读什么
 1. `AGENTS.md`：长期开发规则。
@@ -18,7 +18,7 @@ Platform 是受 Wekinator 启发的摄像头/声音交互实验工具：输入 �
 ## 已实现
 | 输入 | 模式及关键行为 |
 | --- | --- |
-| 动作追踪 | 手/脸/身体，单目标；动态动作匹配、姿态分类、连续控制、区域停留、动作关系 |
+| 动作追踪 | 手/脸/身体，单目标；动态动作匹配、姿态分类、连续控制、区域停留、动作关系、直接坐标输出 |
 | 动态匹配 | DTW 模板匹配；可选增强特征、起止切分、多示范匹配；原版可切换，保留原始录制 |
 | 示范管理 | 多次追加、负例、独立测试、提前保存、回放/裁切、删除、关注部位预设与自定义多点；每动作最多100次，最多12动作 |
 | 规则 | 区域一个点、关系两个点；实时点击选点与红色高亮，数值/滑条联动，无需训练 |
@@ -31,9 +31,9 @@ Platform 是受 Wekinator 启发的摄像头/声音交互实验工具：输入 �
 
 面部有嘴部/眼睑/眉部组合和全点高级选项，密集显示与学习选点独立。内部 `pose` 是 MediaPipe PoseLandmarker，不是 PoseNet。增强只适用于动态动作；其余模式各自计算。进入未明确选过算法的动态项目可能启用增强并标记待训练，见 `enter()` 与 `labBaseline`。
 
-视觉与声音工作台均自动保存，顶部显示保存结果。写入成功后显示已保存，失败时常驻提示。仅保存项目白名单字段，声音事件保留用户明确设置的参考声音。
+本副本将视觉与声音工作台统一为自动保存，顶部显示保存结果。存储失败时常驻提示，完成写入后才显示已保存。仅保存项目白名单字段，声音事件仍保留用户明确设置的参考声音。
 
-0.77 新增坐标输出。手/脸/身体选择坐标模式后复用检测 Worker，每帧读取原始关键点，不依赖学习特征有效性。最多四个点，镜像 XY（0–1）或相对 XYZ，可设置平滑与 5–30 Hz 上限，单在途不排队，丢失和低可信点暂停。Serial/MQTT 使用逐帧 JSON，OSC 使用基础地址加点编号与 2–3 个浮点参数；网页版需要本次更新的桥接。五种软件的接收工程和教程位于 public/examples/coordinates，运行验证条件见包内 README。
+坐标输出在此源码与本地预览中实现，尚未据此更新线上或已发布的桌面包。手/脸/身体优先用 Worker 检测，初始化失败/超时后主线程兼容回退；直接读取原始关键点，不依赖学习特征有效性。最多四点，可勾选 X/Y/Z、配置平滑与 5–30 Hz 上限。丢失选中点或身体点低可信时整帧暂停，恢复从当前值继续，单在途不排队。新项目按点名称输出：Serial/MQTT 的 values 对象含 index_tip_x 等字段，OSC 以基础地址/点名称/轴逐条发 Float；旧项目应用命名设置前保留 points 数组和按点 OSC 向量。网页需新版桥接，桌面需重新打包。公开 v0.75 安装包不含坐标模式。五种软件接收代码、串口双端链路和实测边界见 public/examples/coordinates/README.md。
 
 ## 数据与账号
 - 动作项目：IndexedDB `motion-studio` / `projects`，带项目ID及旧 `current` 兼容记录（`storage.ts`）。
@@ -68,6 +68,8 @@ Platform 是受 Wekinator 启发的摄像头/声音交互实验工具：输入 �
 | `src/core.ts`、`learning.ts`、`continuous.ts` | 项目类型/校验、DTW、分类与回归 |
 | `src/lab-motion.ts`、`LabPanel.tsx`、`lab-compare.worker.ts` | 已合入正式版的增强与独立测试对比，Lab命名不表示未实现 |
 | `src/vision.worker.ts`、`focus.ts` | MediaPipe检测、选点/特征重算 |
+| `src/CoordinateStudio.tsx`、`coordinates.ts`、`coordinate-detector.ts` | 坐标选点、格式与限速、模型兼容回退 |
+| `src/CoordinateOutputDialog.tsx`、`CameraPlaceholder.tsx` | 命名与选轴窗口、共用摄像头开启入口 |
 | `src/Skeleton.tsx`、`PointPicker.tsx`、`face-visual.ts` | 骨骼渲染、选点和面部简洁显示 |
 | `src/region.ts`、`relation.ts`及对应Controls | 规则计算、阈值/区域UI |
 | `src/ObjectStudio.tsx`、`objects.ts`、`detection-region.ts` | 视觉工作台、项目、送检裁切 |
@@ -81,7 +83,7 @@ Platform 是受 Wekinator 启发的摄像头/声音交互实验工具：输入 �
 | `server/object-api.mjs`、`audio-api.mjs`、`xfyun.mjs` | 上游代理、校验、取消与限流 |
 | `vite.config.ts`、`server/start.mjs` | 开发中间件、正式HTTP入口 |
 | `public/models/*.task`、`public/wasm/` | 模型与WASM资源；主线程/Worker均按base加载 |
-| `public/tutorials/`、`public/examples/`、`src/Learn.tsx`、`learn-content.ts` | Arduino/ESP32-S3下载案例与教程 |
+| `public/tutorials/`、`public/examples/`、`src/Learn.tsx`、`learn-content.ts` | Arduino/ESP32-S3 与五种创作软件接收案例、连接教程 |
 
 ## 启动与部署
 Node >=22.12；`npm ci` → `npm run dev`，使用终端实际端口；Vite插件同时提供访问门禁和API，不需要另开代理。
@@ -101,7 +103,8 @@ GitHub仓库：https://github.com/ZhichenGu/ml-play 。Render使用Node Web Serv
 - **存储/运行限制**：浏览器清理数据会丢本地项目；参考音频受localStorage配额约束；进程内限流/撤销不跨实例共享。
 - `src/main.tsx` 与 `style.css` 体积较大，改动要检查相邻模式；不要在小任务中顺手重构全站。
 
-## 验证基线与文档优先级
-0.74 已在 Apple Silicon Mac（macOS 15.7.5）构建通过；132 项前端/算法测试和 29 项服务端测试通过。独立浏览器验证三类项目新建、P 设置、保存与刷新重开；23 个公开资源从本地正式服务读取正常。线上访客入口与本地构建的主程序和样式文件名一致。以上是网页版验收，不代表桌面安装包、真实 API 或外接硬件通过。
+## 验证与文档优先级
 
-优先级：当前用户要求 → `AGENTS.md`规则 → 实际代码与测试 → 本文现状摘要 → 旧阶段文档。`docs/识别增强说明.md`可按需了解算法取舍，其余带版本号的规格/验收是历史材料。以后实质变更同步更新本文相关段落，不追加长篇开发日志。
+当前源码及预览的实际验证见 [当前交互与验收](docs/当前交互与验收.md)。历史 0.74/0.75 的安装与线上检查不能替代当前版本验证；桌面包仍为 v0.75，当前预览改动未自动部署。
+
+当前行为以用户要求、AGENTS、实际代码与测试为准；本文用于导航。README 是中英文使用入口，教程内容在 src/learn-content.ts，英文在 src/locales/en.json。下载源码改动后运行 `python3 scripts/package-examples.py`，再 `--check` 核对全部 ZIP 与源码一致。旧版本规格与验收记录保留为历史资料，不作为重新创建项目或撤销现有功能的指令。
