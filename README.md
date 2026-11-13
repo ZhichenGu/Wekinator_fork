@@ -16,6 +16,12 @@
 
 [查看 v0.75.0 预发布说明和校验文件](https://github.com/ZhichenGu/ml-play/releases/tag/v0.75.0)。
 
+### 直接输出追踪坐标（0.77 预览）
+
+手部、面部和身体追踪均可选择“直接输出坐标”。开启摄像头后选择最多四个点，按 P 配置 XY/XYZ、平滑与发送频率，再通过 Serial、MQTT 或 OSC 输出。XY 与镜像预览一致，Z 为相对深度。项目自动保存在当前浏览器。
+
+平台的“案例代码”已包含 Processing、openFrameworks、Max/MSP、p5.js 和 TouchDesigner 的教程、官方资料链接与下载。TouchDesigner 支持 OSC In CHOP、MQTT Client DAT 和 Serial DAT。接收项目、消息格式、串口链路说明与待验证项见[坐标案例说明](public/examples/coordinates/README.md)。网页版需下载新版 OSC 桥接。
+
 ### 可以做什么
 
 | 类别 | 功能 |
@@ -89,6 +95,12 @@ A small tool inspired by Wekinator, built for interactive experiments with a cam
 | Windows | [Download the Intel/AMD x64 preview (EXE)](https://github.com/ZhichenGu/ml-play/releases/download/v0.75.0/Platform-0.75.0-Windows-x64-Setup.exe). The installer is unsigned. Installation and device access on Windows 10 and 11 are awaiting real-device tests. |
 
 [Read the v0.75.0 preview notes and find the checksums](https://github.com/ZhichenGu/ml-play/releases/tag/v0.75.0).
+
+### Direct tracking coordinates (0.77 preview)
+
+Hand, face and body projects can stream coordinates directly. Select up to four landmarks, press P for XY/XYZ, smoothing and rate settings, then send through Serial, MQTT or OSC. XY follows the mirrored preview and Z is relative depth. Project settings save automatically in the current browser.
+
+The Examples section includes downloadable projects, guides and official references for Processing, openFrameworks, Max/MSP, p5.js and TouchDesigner. TouchDesigner supports OSC In CHOP, MQTT Client DAT and Serial DAT. See the [coordinate receiver guide](public/examples/coordinates/README.md) for formats, serial topology and pending receiver tests. Web OSC needs the updated bridge.
 
 ### What it does
 

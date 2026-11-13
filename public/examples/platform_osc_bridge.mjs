@@ -14,6 +14,10 @@ function oscString(text) {
 }
 
 function packet(address,value,integer) {
+  if(Array.isArray(value)&&value.length>=2&&value.length<=3&&value.every(n=>typeof n==='number'&&Number.isFinite(Math.fround(n)))) {
+    const args=Buffer.alloc(value.length*4);value.forEach((n,i)=>args.writeFloatBE(n,i*4));
+    return Buffer.concat([oscString(address),oscString(','+'f'.repeat(value.length)),args]);
+  }
   if (integer) {
     if (!Number.isInteger(value) || value < -2147483648 || value > 2147483647) throw Error('Expected int32');
     const argument=Buffer.alloc(4);
@@ -33,7 +37,7 @@ function packet(address,value,integer) {
 
 export function createOscReceiver() {
   const udp = dgram.createSocket('udp4');
-  async function handle(req, res, integer) {
+  async function handle(req, res, integer, coordinates=false) {
     if (req.method !== 'POST' || req.headers['content-type'] !== 'application/json') {
       res.writeHead(400).end(); return;
     }
@@ -45,14 +49,22 @@ export function createOscReceiver() {
         if (length > 4096) { res.writeHead(413).end(); return; }
         chunks.push(chunk);
       }
-      const {host:target,port,address,value}=JSON.parse(Buffer.concat(chunks).toString('utf8'));
+      const {host:target,port,address,value,points}=JSON.parse(Buffer.concat(chunks).toString('utf8'));
       if (typeof target!=='string' || !isIPv4(target)) throw Error('Invalid IP');
       const [a,b]=target.split('.').map(Number);
       const allowed=target===host || a===10 || a===192&&b===168 || a===172&&b>=16&&b<=31;
       if (!allowed || !Number.isInteger(port) || port<1 || port>65535 ||
           typeof address!=='string' || address.length>160 || !/^(\/[A-Za-z0-9_.-]+)+$/.test(address)) throw Error('Invalid destination');
-      const message = packet(address,value,integer);
-      udp.send(message, port, target, error => res.writeHead(error ? 502 : 204).end());
+      let messages;
+      if(coordinates) {
+        if(!Array.isArray(points)||points.length<1||points.length>4||new Set(points.map(p=>p.id)).size!==points.length)throw Error('Invalid coordinate batch');
+        messages=points.map(p=>{
+          if(!Number.isInteger(p.id)||p.id<0||p.id>477||!Array.isArray(p.values))throw Error('Invalid point');
+          return packet(address+'/'+p.id,p.values,false);
+        });
+      } else messages=[packet(address,value,integer)];
+      await Promise.all(messages.map(message=>new Promise((resolve,reject)=>udp.send(message,port,target,e=>e?reject(e):resolve()))));
+      res.writeHead(204).end();
     } catch { res.writeHead(400).end(); }
   }
   return {handle, close: () => udp.close()};
@@ -69,7 +81,7 @@ if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) 
     }
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
-    if (req.url !== '/osc' && req.url !== '/osc/int32') { res.writeHead(404).end(); return; }
+    if (req.url !== '/osc' && req.url !== '/osc/int32' && req.url !== '/osc/coordinates') { res.writeHead(404).end(); return; }
     if (req.method === 'OPTIONS') {
       res.writeHead(204, {
         'Access-Control-Allow-Methods': 'POST',
@@ -79,7 +91,7 @@ if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) 
       }).end();
       return;
     }
-    void receiver.handle(req, res, req.url === '/osc/int32');
+    void receiver.handle(req, res, req.url === '/osc/int32',req.url === '/osc/coordinates');
   });
   server.on('error', error => { console.error(error.message); process.exitCode = 1; });
   server.listen(8765, host, () => console.log('Platform OSC ready on http://127.0.0.1:8765 (Ctrl+C to stop)'));

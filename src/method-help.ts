@@ -2,6 +2,7 @@ import type {Mode} from './core';
 import type {LearningMode} from './learning';
 export const methodHelp:Record<Mode,Record<LearningMode,[string,string,string]>>={
   "hand": {
+    "coordinates": ["实时读取所选关键点的画面位置。", "打开摄像头并选择检测点，设置输出连接。", "持续发送 XY 或 XYZ；追踪丢失时暂停。"],
     "dynamic": [
       "识别一次完整的挥手或画圈过程，比较动作随时间的变化。",
       "录制多次完整示范，再训练；运行时允许一定速度差异。",
@@ -29,6 +30,7 @@ export const methodHelp:Record<Mode,Record<LearningMode,[string,string,string]>>
     ]
   },
   "face": {
+    "coordinates": ["实时读取所选关键点的画面位置。", "打开摄像头并选择检测点，设置输出连接。", "持续发送 XY 或 XYZ；追踪丢失时暂停。"],
     "dynamic": [
       "识别张嘴再闭嘴、转头等一段完整的面部变化过程。",
       "录制多次完整示范，再训练；运行时允许一定速度差异。",
@@ -56,6 +58,7 @@ export const methodHelp:Record<Mode,Record<LearningMode,[string,string,string]>>
     ]
   },
   "pose": {
+    "coordinates": ["实时读取所选关键点的画面位置。", "打开摄像头并选择检测点，设置输出连接。", "持续发送 XY 或 XYZ；追踪丢失时暂停。"],
     "dynamic": [
       "识别抬手再放下、伸展等一段完整的身体动作。",
       "录制多次完整示范，再训练；运行时允许一定速度差异。",

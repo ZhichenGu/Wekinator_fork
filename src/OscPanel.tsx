@@ -4,24 +4,25 @@ import {t} from './i18n';
 
 const desktop = import.meta.env?.MODE === 'desktop';
 
-export async function sendOsc(value:string|number,target:OscTarget=defaultOscTarget(typeof value==='number'),positive=true) {
+export async function sendOsc(value:string|number|{id:number;values:number[]}[],target:OscTarget=defaultOscTarget(typeof value==='number'),positive=true) {
   try {
-    const argument=oscArgument(value,target,positive);
-    const path=argument.type==='integer'?'osc/int32':'osc';
+    const vector=Array.isArray(value);
+    const argument=vector?{type:'float',value}:oscArgument(value,target,positive);
+    const path=vector?'osc/coordinates':argument.type==='integer'?'osc/int32':'osc';
     const res=await fetch((desktop ? '/api/desktop/' : 'http://127.0.0.1:8765/')+path,{
-      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({host:target.host,port:target.port,address:target.address,value:argument.value}),
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({host:target.host,port:target.port,address:target.address,...(vector?{points:value}:{value:argument.value})}),
       credentials:'omit', redirect:'error', signal:AbortSignal.timeout(10000)
     });
-    if(path==='osc/int32'&&res.status===404) throw new RangeError();
+    if((vector||path==='osc/int32')&&res.status===404) throw new RangeError();
     if(res.status!==204) throw Error();
   } catch (error) {
     if(desktop) throw Error(t('OSC 发送失败，请检查接收端地址和端口。'));
-    if(error instanceof RangeError) throw Error(t('请重新下载并启动支持整数的 OSC 桥接。'));
+    if(error instanceof RangeError) throw Error(t('请重新下载并启动支持坐标与整数的 OSC 桥接。'));
     throw Error(t('OSC 发送失败，请启动本机桥接并允许浏览器访问本地网络。'));
   }
 }
 
-export function OscPanel({continuous=false,target,onSave,disabled,onTest,yesText='YES',noText,sendNo=true}:{continuous?:boolean;target?:OscTarget;yesText?:string;noText?:string;sendNo?:boolean;onSave:(target:OscTarget)=>void;disabled:boolean;onTest:()=>void}) {
+export function OscPanel({coordinates=false,continuous=false,target,onSave,disabled,onTest,yesText='YES',noText,sendNo=true}:{coordinates?:boolean;continuous?:boolean;target?:OscTarget;yesText?:string;noText?:string;sendNo?:boolean;onSave:(target:OscTarget)=>void;disabled:boolean;onTest:()=>void}) {
   const saved=target??defaultOscTarget(continuous);
   const [host,setHost]=useState(saved.host),[port,setPort]=useState(String(saved.port)),[address,setAddress]=useState(saved.address);
   const savedType=saved.trigger?.type??'string';
@@ -47,7 +48,7 @@ export function OscPanel({continuous=false,target,onSave,disabled,onTest,yesText
     <label className="field compact">{t('接收端 IPv4')}<input value={host} onChange={e=>setHost(e.target.value)} disabled={disabled}/></label>
     <label className="field compact">{t('UDP 端口')}<input type="number" min="1" max="65535" value={port} onChange={e=>setPort(e.target.value)} disabled={disabled}/></label>
     <label className="field compact">{t('OSC 地址')}<input value={address} maxLength={160} onChange={e=>setAddress(e.target.value)} disabled={disabled}/></label>
-    {continuous?<p>{t('参数类型：浮点数（f）')}</p>:<>
+    {continuous?<p>{t(coordinates?'每个点发送一条 OSC 消息，参数为 XY 或 XYZ 浮点数。':'参数类型：浮点数（f）')}</p>:<>
       <label className="field compact">{t('OSC 参数类型')}<select value={type} onChange={e=>changeType(e.target.value as OscType)} disabled={disabled}>
         <option value="string">String</option><option value="integer">Integer (int32)</option><option value="float">Float (float32)</option>
       </select></label>

@@ -1,3 +1,4 @@
+import {cleanCoordinateConfig,type CoordinateConfig} from './coordinates';
 import {cleanOscTarget,type OscTarget} from './osc';
 import {validRelation,type RelationConfig} from './relation';
 import {validRegion,validLandmark,type RegionConfig} from './region';
@@ -10,7 +11,7 @@ export type Frame = { aspectRatio?:number; blend?:number[]; t: number; points: P
 export const MAX_SAMPLES_PER_ACTION = 100;
 export type Sample = { id: string; frames: Frame[]; duration: number; negative: boolean; split?: 'train'|'test'; testRound?:number; testValue?:number; lostBefore?:number[]; aspectRatio?: number };
 export type Action = { id: string; name: string; osc?:OscTarget; effect: 'indicator' | 'serial' | 'mqtt' | 'osc'; serial?: SerialMessage; mqtt?: MqttMessage; color: string; samples: Sample[]; trained: boolean; threshold: number; controlValue?:number };
-export type Project = { labBaseline?:boolean; lab?:{features:boolean;trim:boolean;ensemble:boolean}; id?:string; schemaVersion: 1; name: string; mode: Mode; feature: FeatureMode; focus?:number[]; learning?: 'dynamic'|'pose'|'continuous'|'region'|'relation'; relation?:RelationConfig; region?:RegionConfig; poseHoldSeconds?: number; actions: Action[]; mqtt?: BrokerConfig; serialBaudRate?: number; recordingDuration?: number; recordingDelay?: 0|1|3; updatedAt: string };
+export type Project = { labBaseline?:boolean; lab?:{features:boolean;trim:boolean;ensemble:boolean}; id?:string; schemaVersion: 1; name: string; mode: Mode; feature: FeatureMode; focus?:number[]; learning?: 'dynamic'|'pose'|'continuous'|'region'|'relation'|'coordinates'; coordinates?:CoordinateConfig; relation?:RelationConfig; region?:RegionConfig; poseHoldSeconds?: number; actions: Action[]; mqtt?: BrokerConfig; serialBaudRate?: number; recordingDuration?: number; recordingDelay?: 0|1|3; updatedAt: string };
 export type Template = { actionId: string; duration: number; sequence: number[][]; energy: number; negative: boolean };
 
 export function appendSample(action: Action, sample: Sample): Action {
@@ -153,8 +154,10 @@ export function validateProject(data: unknown): Project {
   if(p.labBaseline!==undefined&&typeof p.labBaseline!=='boolean')throw new Error('实验设置无效。');
   if(p.lab!==undefined&&(!p.lab||['features','trim','ensemble'].some(key=>typeof (p.lab as any)[key]!=='boolean')))throw new Error('实验设置无效。');
   if(p.focus!==undefined&&(!Array.isArray(p.focus)||!p.focus.length||p.focus.length>(p.mode==='face'?478:33)||new Set(p.focus).size!==p.focus.length||p.focus.some((id,i)=>!validLandmark(p.mode,id)||(i>0&&id<=p.focus![i-1]))))throw new Error('关注部位无效。');
-  if(p.learning!==undefined&&!['dynamic','pose','continuous','region','relation'].includes(p.learning))throw new Error('不支持的学习方式。');
+  if(p.learning!==undefined&&!['dynamic','pose','continuous','region','relation','coordinates'].includes(p.learning))throw new Error('不支持的学习方式。');
   if((p.learning==='region'||p.learning==='relation')&&p.actions.length>1)throw new Error('区域模式只支持一个触发项。');
+  if(p.coordinates!==undefined)p.coordinates=cleanCoordinateConfig(p.mode,p.coordinates);
+  if(p.learning==='coordinates'&&p.actions.length!==1)throw new Error('坐标模式需要一个输出配置。');
   if(p.relation!==undefined&&(!validRelation(p.relation)||p.relation.points?.some(i=>!validLandmark(p.mode,i))))throw new Error('关系设置无效。');
   if(p.region!==undefined&&(!validRegion(p.region)||(p.region.point!==undefined&&!validLandmark(p.mode,p.region.point))))throw new Error('区域设置无效。');
   if(p.poseHoldSeconds!==undefined&&(!Number.isFinite(p.poseHoldSeconds)||p.poseHoldSeconds<.1||p.poseHoldSeconds>3))throw new Error('姿态确认时间无效。');
