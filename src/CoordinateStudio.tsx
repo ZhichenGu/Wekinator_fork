@@ -147,7 +147,7 @@ export function CoordinateStudio({initial,onBack}:{initial:Project;onBack:()=>vo
         <div className="coordinate-stage" style={{aspectRatio:camera.size.width/camera.size.height,'--coordinate-ratio':camera.size.width/camera.size.height} as React.CSSProperties}>
           <video ref={camera.video} autoPlay muted playsInline/>
           {camera.state==='on'&&<>
-            {dual?[0,1].map(hand=><Skeleton key={hand} points={points.slice(hand*21,hand*21+21)} mode="hand"/>):<Skeleton points={points} mode={project.mode} focus={config.points}/>}
+            {dual?[0,1].map(hand=><Skeleton key={hand} points={points.slice(hand*21,hand*21+21)} mode="hand" hidePoints={editingHand===hand}/>):<Skeleton points={points} mode={project.mode} hidePoints={project.mode==='hand'} focus={config.points}/>}
             {(!dual||editingHand>=0)&&<PointPicker points={dual?points.slice(offset,offset+21):points} mode={project.mode} selected={selected.map(id=>id-offset)} onSelect={id=>select(id+offset)} pair={false}/>}
             {project.mode==='hand'&&<svg className="coordinate-hand-labels" viewBox="0 0 1000 750" preserveAspectRatio="none">{(dual?[0,1]:[0]).map(hand=>{const wrist=points[hand*21];return wrist&&Number.isFinite(wrist.x)?<text key={hand} x={Math.max(25,Math.min(940,(1-wrist.x)*1000))} y={Math.max(25,Math.min(720,wrist.y*750+30))}>{t((dual?hand===0:coordinateHandSide(points)==='left')?'左':'右')}</text>:null;})}</svg>}
           </>}

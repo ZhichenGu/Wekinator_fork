@@ -1,1 +1,1 @@
-export const PREVIEW_VERSION = '0.94';
+export const PREVIEW_VERSION = '0.96';
